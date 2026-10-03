@@ -1,5 +1,9 @@
 #include "Yamamoto/KartDemoCam.h"
 
+#include "Yamamoto/kartCamera.h"
+
+#include "Kaneshige/RaceMgr.h"
+
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
 // comments inside functions are inline functions being called in that function
@@ -12,7 +16,9 @@ void KartDemoCam::ChaseFovy(const CrsData::Camera *) {
     // void CrsData::Camera::getFovy2() const {}
 }
 
-void KartDemoCam::DoInitCol() {}
+void KartDemoCam::DoInitCol() {
+    _80.set(mCam->mCameraPos);
+}
 
 void KartDemoCam::DoCol() {}
 
@@ -132,13 +138,24 @@ void KartDemoCam::StartDemoCam() {}
 
 void KartDemoCam::SetLastDemo() {}
 
-void KartDemoCam::SetRaceCam() {}
+void KartDemoCam::SetRaceCam() {
+    _38 = 0;
+    mCam->mMode = 0;
+    mCam->InitOutView();
+    if (mCam->mCamNo == 0) {
+        mCam->mCtrl->mBitfield |= 2;
+    }
+}
 
 void KartDemoCam::SetNextID() {}
 
 void KartDemoCam::DoExecution() {}
 
-u8 KartDemoCam::GetStartID() {}
+bool KartDemoCam::GetStartID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
+    if (mCam->mMode == 2) return 1;
+    return mStartId != -1;
+}
 
 void KartDemoCam::InitStartID(bool) {}
 

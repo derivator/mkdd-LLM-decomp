@@ -70,7 +70,7 @@ public:
     void SetRaceCam();                          // 0x8030f7fc
     void SetNextID();                           // 0x8030f85c
     void DoExecution();                         // 0x8030f8ec
-    u8 GetStartID();                          // 0x8030f94c
+    bool GetStartID();                        // 0x8030f94c
     void InitStartID(bool);                     // 0x8030f9b0
     void StartDemoView();                       // 0x8030f9e8
     void InitStartMapCam();                     // 0x8030fa08
