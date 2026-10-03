@@ -8,21 +8,49 @@
 
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
+#include "Kaneshige/Course/CrsGround.h"
+
 // comments inside functions are inline functions being called in that function
 
 void KartDemoCam::Init(KartCam *) {}
 
-void KartDemoCam::ChaseFovy(const CrsData::Camera *) {
-    // void KartCam::SetFovy(float) {}
-    // void CrsData::Camera::getFovy() const {}
-    // void CrsData::Camera::getFovy2() const {}
+void KartDemoCam::ChaseFovy(const CrsData::Camera *cam) {
+    f32 fovy = mCam->GetFovy();
+    f32 camFovy2 = cam->getFovy2();
+    if (camFovy2 == 0.0f) {
+        mCam->SetFovy(cam->getFovy());
+    }
+    else {
+        GetKartCtrl()->ChaseFnumber(&fovy, camFovy2, 0.0f);
+        mCam->SetFovy(fovy);
+    }
 }
 
 void KartDemoCam::DoInitCol() {
     _80.set(mCam->mCameraPos);
 }
 
-void KartDemoCam::DoCol() {}
+void KartDemoCam::DoCol() {
+    CrsGround ground;
+    JGeometry::TVec3f normal;
+    ground.search(mCam->mCameraPos, _80);
+    if (!(mBody->mCarStatus & 0x400000)) {
+        if (ground.getAttribute() == 2 || ground.getAttribute() == 18) {
+            f32 f = ground.getWallNormal(&normal, nullptr);
+            mCam->mCameraPos.x += normal.x * f * 2.0f;
+            mCam->mCameraPos.y += normal.y * f * 2.0f;
+            mCam->mCameraPos.z += normal.z * f * 2.0f;
+        }
+        else {
+            f32 height = ground.getHeight();
+            f32 diff = (mCam->mCameraPos.y - 30.0f) - height;
+            if (diff < 0.0f) {
+                mCam->mCameraPos.y -= diff;
+            }
+        }
+    }
+    _80.set(mCam->mCameraPos);
+}
 
 void KartDemoCam::InitFixCam() {
     // void CrsData::Camera::getPosition(JGeometry::TVec3<float> *) const {}
