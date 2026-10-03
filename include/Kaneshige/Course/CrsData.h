@@ -239,7 +239,7 @@ public:
         f32 getFovy() const { return mFovY; }
         f32 getFovy2() const { return mFovY2; }
         u32 getKind() const { return mKind; }
-        s16 getPathSpeed() const { return mPathSpeed; }
+        int getPathSpeed() const { return mPathSpeed; }
         int getPathID() const { return mPathID; }
         int getTime() const { return mTime; }
         int getNextCameraID() const { return mNextID; }

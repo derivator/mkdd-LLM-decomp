@@ -222,7 +222,39 @@ void KartDemoCam::InitFixPathCam() {
 }
 
 void KartDemoCam::DoFixPathCam() {
-    // void CrsData::Camera::getPathSpeed() const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    KartCam* kc;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    if (cam->getPathID() < 0) {
+        mCam->OutView();
+        return;
+    }
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    int pathSpeed = cam->getPathSpeed();
+    if (pathSpeed == 0) {
+        pathSpeed = 1;
+    }
+    if (pathSpeed > 100) {
+        pathSpeed = 100;
+    }
+    f32 scale = 0.0005f * (f32)pathSpeed * local3.length();
+    local3.normalize();
+    local3.scale(scale);
+    mCam->mCameraPos.add(local3);
+    ChaseFovy(cam);
+    JGeometry::TVec3f local4;
+    cam->getFrontDirection(&local4);
+    kc = mCam;
+    f32 angle = atan2f(local4.x, local4.z);
+    GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixPathCam", 40);
 }
 
 void KartDemoCam::InitChasePathCam() {}
