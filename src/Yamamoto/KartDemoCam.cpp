@@ -53,7 +53,21 @@ void KartDemoCam::DoCol() {
 }
 
 void KartDemoCam::InitFixCam() {
-    // void CrsData::Camera::getPosition(JGeometry::TVec3<float> *) const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&local2);
+    mCam->mCameraPos.set(local2);
+    mCam->mCameraLookPos.set(mCam->mCameraPos);
+    JGeometry::TVec3f local3;
+    cam->getFrontDirection(&local3);
+    mCam->mCameraLookPos.x += 100.0f * local3.x;
+    mCam->mCameraLookPos.y += 100.0f * local3.y;
+    mCam->mCameraLookPos.z += 100.0f * local3.z;
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixCam", 31);
 }
 
 void KartDemoCam::DoFixCam() {}
