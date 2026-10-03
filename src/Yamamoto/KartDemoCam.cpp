@@ -149,7 +149,19 @@ void KartDemoCam::SetRaceCam() {
     }
 }
 
-void KartDemoCam::SetNextID() {}
+void KartDemoCam::SetNextID() {
+    RaceMgr::getManager()->getCourse()->getCrsData();
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId)->getNextCameraID();
+    if (mStartId >= 0) {
+        InitStartDemoCam();
+    } else {
+        if (!(_38 & 0xC)) {
+            GETJ2DManager()->startPreRace();
+        }
+        _38 |= 4;
+        _3a[0] = 0;
+    }
+}
 
 void KartDemoCam::DoExecution() {
     if (_38 & 1) {
