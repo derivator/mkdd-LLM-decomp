@@ -468,7 +468,31 @@ void KartDemoCam::InitDemoPathCam() {
     mCam->DegubCamera("InitDemoPathCam", 49);
 }
 
-void KartDemoCam::DoDemoPathCam() {}
+void KartDemoCam::DoDemoPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    f32 scale = 0.0005f * (f32)cam->getPathSpeed();
+    scale *= local3.length();
+    local3.normalize();
+    local3.scale(scale);
+    mCam->mCameraPos.add(local3);
+    cam->getTargetPos2(&local3);
+    local3.sub(local3, mCam->mCameraLookPos);
+    f32 scale2 = 0.01f * local3.length();
+    local3.normalize();
+    local3.scale(scale2);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoDemoPathCam", 50);
+}
 
 void KartDemoCam::InitDemoParallelView() {}
 
