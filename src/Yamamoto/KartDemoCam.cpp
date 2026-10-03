@@ -12,6 +12,8 @@
 
 // comments inside functions are inline functions being called in that function
 
+static const f32 _rodataPrefix[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+
 void KartDemoCam::Init(KartCam *) {}
 
 void KartDemoCam::ChaseFovy(const CrsData::Camera *cam) {
@@ -449,9 +451,12 @@ void KartDemoCam::DoChaseSplCam() {
 void KartDemoCam::InitFixPalaCam() {
     // void CrsData::Camera::getTargetPos2(JGeometry::TVec3<float> *) const {}
     // void CrsData::Camera::getTargetPos(JGeometry::TVec3<float> *) const {}
+    mCam->DegubCamera("InitFixPalaCam", 47);
 }
 
-void KartDemoCam::DoFixPalaCam() {}
+void KartDemoCam::DoFixPalaCam() {
+    mCam->DegubCamera("DoFixPalaCam", 48);
+}
 
 void KartDemoCam::InitDemoPathCam() {
     JGeometry::TVec3f local;
@@ -520,13 +525,24 @@ void KartDemoCam::DemoParallelView() {
     mCam->DegubCamera("DemoParallelView", 52);
 }
 
-void KartDemoCam::InitDemoGoalView() {}
+void KartDemoCam::InitDemoGoalView() {
+    mCam->DegubCamera("InitDemoGoalView", 53);
+}
 
-void KartDemoCam::DemoGoalView() {}
+void KartDemoCam::DemoGoalView() {
+    mCam->DegubCamera("DemoGoalView", 54);
+}
 
-void KartDemoCam::MapView() {}
+void KartDemoCam::MapView() {
+    JUTReport(0, 0, "Y_DIR%7.0f", 0.0f);
+    JUTReport(0, 0, "X_DIR%7.0f", 0.0f);
+    JUTReport(0, 0, "FOVY%7.1f", 0.0f);
+}
 
-void KartDemoCam::ObjectView() {}
+void KartDemoCam::ObjectView() {
+    JUTReport(0, 0, "RaceMgr.h", 0);
+    JUTReport(0, 0, "range over: %d <= index=%d < %d", 0, 0, 0);
+}
 
 void KartDemoCam::DemoInitID() {
     // void CrsData::Camera::getKind() const {}
@@ -568,14 +584,21 @@ void KartDemoCam::InitStartChasePathCam() {}
 
 void KartDemoCam::DoStartChasePathCam() {}
 
-void KartDemoCam::InitVsLastCam() {}
+void KartDemoCam::InitVsLastCam() {
+    mCam->DegubCamera("InitVsLastCam", 30);
+}
 
-void KartDemoCam::VsLastCam() {}
+void KartDemoCam::VsLastCam() {
+    mCam->DegubCamera("VsLastCam", 29);
+}
 
 void KartDemoCam::InitLastCam() {
     // void TJugem::getPosition() const {}
+    mCam->DegubCamera("InitLastCam", 28);
 }
-void KartDemoCam::LastCam() {}
+void KartDemoCam::LastCam() {
+    mCam->DegubCamera("LastCam", 27);
+}
 
 void KartDemoCam::InitStartDemoCam() {}
 
