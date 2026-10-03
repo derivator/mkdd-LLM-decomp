@@ -626,7 +626,30 @@ void KartDemoCam::InitStartPathCam() {
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
 }
 
-void KartDemoCam::DoStartPathCam() {}
+void KartDemoCam::DoStartPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraPos.add(local3);
+    cam->getTargetPos2(&local3);
+    local3.sub(local3, mCam->mCameraLookPos);
+    f = 0.01f * local3.length();
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
 void KartDemoCam::InitStartLookPathCam() {
     JGeometry::TVec3f local;
@@ -767,7 +790,54 @@ void KartDemoCam::LastCam() {
 
 void KartDemoCam::InitStartDemoCam() {}
 
-void KartDemoCam::StartDemoCam() {}
+void KartDemoCam::InitStartMapCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    cam->getKind();
+    switch (cam->getKind()) {
+        case 4:
+            InitStartFixPathCam();
+            mCam->DegubCamera("InitStartFixPathCam", 11);
+            break;
+        case 5:
+            InitStartPathCam();
+            mCam->DegubCamera("InitStartPathCam", 12);
+            break;
+        case 6:
+            InitStartLookPathCam();
+            mCam->DegubCamera("InitStartLookPathCam", 13);
+            break;
+        case 1:
+            InitStartOnlyPathCam();
+            mCam->DegubCamera("InitStartOnlyPathCam", 14);
+            break;
+    }
+}
+
+void KartDemoCam::StartDemoCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (_38 & 4) {
+        LastCam();
+        return;
+    }
+    switch (cam->getKind()) {
+        case 4:
+            DoStartFixPathCam();
+            mCam->DegubCamera("DoStartFixPathCam", 23);
+            break;
+        case 5:
+            DoStartPathCam();
+            mCam->DegubCamera("DoStartPathCam", 24);
+            break;
+        case 6:
+            DoStartLookPathCam();
+            mCam->DegubCamera("DoStartLookPathCam", 25);
+            break;
+        case 1:
+            DoStartOnlyPathCam();
+            mCam->DegubCamera("DoStartOnlyPathCam", 26);
+            break;
+    }
+}
 
 void KartDemoCam::SetLastDemo() {
     _38 |= 4;
@@ -832,29 +902,6 @@ void KartDemoCam::InitStartID(bool last) {
 
 void KartDemoCam::StartDemoView() {
     StartDemoCam();
-}
-
-void KartDemoCam::InitStartMapCam() {
-    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
-    cam->getKind();
-    switch (cam->getKind()) {
-        case 4:
-            InitStartFixPathCam();
-            mCam->DegubCamera("InitStartFixPathCam", 11);
-            break;
-        case 5:
-            InitStartPathCam();
-            mCam->DegubCamera("InitStartPathCam", 12);
-            break;
-        case 6:
-            InitStartLookPathCam();
-            mCam->DegubCamera("InitStartLookPathCam", 13);
-            break;
-        case 1:
-            InitStartOnlyPathCam();
-            mCam->DegubCamera("InitStartOnlyPathCam", 14);
-            break;
-    }
 }
 
 void KartDemoCam::StartMapCam() {
