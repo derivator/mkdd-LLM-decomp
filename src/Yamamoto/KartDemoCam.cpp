@@ -176,7 +176,28 @@ void KartDemoCam::InitChaseCam() {
     mCam->DegubCamera("InitChaseCam", 37);
 }
 
-void KartDemoCam::DoChaseCam() {}
+void KartDemoCam::DoChaseCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    local4.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    local3.sub(local4, mCam->mCameraLookPos);
+    f32 len = local3.length();
+    local3.normalize();
+    len *= 0.6f;
+    local3.scale(len);
+    mCam->mCameraLookPos.add(local3);
+    mCam->mCameraPos.x = mCamKartDiff.x * mCamKartDiffLength + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = mCamKartDiff.y * mCamKartDiffLength + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = mCamKartDiff.z * mCamKartDiffLength + mCam->mCameraLookPos.z;
+    DoCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoChaseCam", 38);
+}
 
 void KartDemoCam::InitFixPathCam() {
     // void CrsData::Camera::getPathID() const {}
