@@ -182,7 +182,14 @@ bool KartDemoCam::GetStartID() {
     return mStartId != -1;
 }
 
-void KartDemoCam::InitStartID(bool) {}
+void KartDemoCam::InitStartID(bool last) {
+    _38 = 1;
+    if (last) {
+        SetLastDemo();
+    } else {
+        InitStartDemoCam();
+    }
+}
 
 void KartDemoCam::StartDemoView() {
     StartDemoCam();
@@ -192,15 +199,37 @@ void KartDemoCam::InitStartMapCam() {}
 
 void KartDemoCam::StartMapCam() {}
 
-void KartDemoCam::SetMapNextID() {}
+void KartDemoCam::SetMapNextID() {
+    CrsData* cd = RaceMgr::getManager()->getCourse()->getCrsData();
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId)->getNextCameraID();
+    if (mStartId < 0) {
+        mStartId = cd->getStartLoserCameraID();
+    }
+    InitStartMapCam();
+}
 
-void KartDemoCam::SetUpMapID() {}
+void KartDemoCam::SetUpMapID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartLoserCameraID();
+    if (mStartId >= 0) {
+        InitStartMapCam();
+        _38 |= 0x100;
+    }
+}
 
 void KartDemoCam::InitStaffView() {}
 
 void KartDemoCam::StaffView() {}
 
-void KartDemoCam::SetStaffNextID() {}
+bool KartDemoCam::SetStaffNextID() {
+    RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (cam->getNextCameraID() < 0) {
+        return 0;
+    }
+    mStartId = cam->getNextCameraID();
+    InitStaffView();
+    return 1;
+}
 
 void KartDemoCam::SetUpStaffID() {
     mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();

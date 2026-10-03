@@ -79,7 +79,7 @@ public:
     void SetUpMapID();                          // 0x8030fc40
     void InitStaffView();                        // 0x8030fc9c
     void StaffView();                           // 0x8030fdbc
-    void SetStaffNextID();                      // 0x8030ff40
+    bool SetStaffNextID();                      // 0x8030ff40
     void SetUpStaffID();                        // 0x8030ffb8
     // Inline/Unused
     // void GetPerView();
