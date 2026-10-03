@@ -117,6 +117,9 @@ public:
 
     void set12ee(int val) { _12ee = val; }
 
+    u8 get12e9() { return _12e9[0]; }
+    u16 getSecretKartFlags() { return *(u16 *)&_12e9[1]; }
+
 private:
     u8 _0[0x96c];              //
     int mState;                // 96C

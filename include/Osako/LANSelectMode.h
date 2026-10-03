@@ -86,6 +86,14 @@ public:
         int get_18() {
             return mIdx;
         }
+
+        int getIdx() {
+            return mIdx;
+        }
+
+        void setIdx(int val) {
+            mIdx = val;
+        }
     protected:
         int mIdx;
         int mMax;
@@ -166,6 +174,14 @@ public:
         // Inline/Unused
         SelectableItemSw(u32, J2DScreen *, void *, void *, void *, ResTIMG **, ResTIMG **, int, ResTIMG **, int);
         void setMaskSw(u32);
+
+        int getIdxSw() {
+            return mIdxSw;
+        }
+
+        void setIdxSw(int val) {
+            mIdxSw = val;
+        }
     private:
         ValueMode mValueMode;
         int mIdxSw;
@@ -182,7 +198,15 @@ public:
     void draw(const J2DGrafContext *); // 0x802161ac
     void start(bool); // 0x80216214
     void setDisplayMax(); // 0x80216358    
-    
+
+    SelectableItem1 *getModeItem() { return mModeItem; }
+    SelectableItem1 *getPowerItem() { return mPowerItem; }
+    SelectableItem2 *getLapItem() { return mLapItem; }
+    SelectableItem1 *getOrderItem() { return mOrderItem; }
+    SelectableItemSw *getCourseSelectItem() { return mCourseSelectItem; }
+    SelectableItem1 *getTagItem() { return mTagItem; }
+    SelectableItemDisp *getDisplayItem() { return mDisplayItem; }
+
 private: 
     u32 mState;
     bool _4;
