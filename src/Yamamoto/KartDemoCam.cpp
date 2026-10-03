@@ -453,7 +453,20 @@ void KartDemoCam::InitFixPalaCam() {
 
 void KartDemoCam::DoFixPalaCam() {}
 
-void KartDemoCam::InitDemoPathCam() {}
+void KartDemoCam::InitDemoPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+    *(u16*)&_3a[2] = 0;
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitDemoPathCam", 49);
+}
 
 void KartDemoCam::DoDemoPathCam() {}
 
@@ -667,4 +680,12 @@ bool KartDemoCam::SetStaffNextID() {
 void KartDemoCam::SetUpStaffID() {
     mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
     _38 |= 0x200;
+}
+
+void CrsData::Camera::getTargetPos(JGeometry::TVec3f *out) const {
+    out->set(mTargetPos);
+}
+
+void CrsData::Camera::getTargetPos2(JGeometry::TVec3f *out) const {
+    out->set(mTargetPos2);
 }

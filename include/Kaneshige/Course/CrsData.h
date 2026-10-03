@@ -233,8 +233,8 @@ public:
         void getFrontDirection(JGeometry::TVec3f *out) const;
 
         void getPosition(JGeometry::TVec3f *out) const { out->set(mPos); }
-        void getTargetPos(JGeometry::TVec3f *out) const { out->set(mTargetPos); }
-        void getTargetPos2(JGeometry::TVec3f *out) const { out->set(mTargetPos2); }
+        void getTargetPos(JGeometry::TVec3f *out) const;
+        void getTargetPos2(JGeometry::TVec3f *out) const;
 
         f32 getFovy() const { return mFovY; }
         f32 getFovy2() const { return mFovY2; }
