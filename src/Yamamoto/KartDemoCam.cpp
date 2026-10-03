@@ -361,17 +361,15 @@ void KartDemoCam::DoFixSplCam() {
     mCam->mPathSpline->setAll(mCam->mPathData);
     mCam->mPathSpline->getBezierPoint(&local3, mCam->_1b0);
     mCam->mCameraPos.set(local3);
-    u16 pathSpeed = cam->getPathSpeed();
-    if (pathSpeed == 0) {
-        pathSpeed = 1;
+    u16 k = cam->getPathSpeed();
+    if (k == 0) {
+        k = 1;
     }
-    if (pathSpeed > 100) {
-        pathSpeed = 100;
+    if (k > 100) {
+        k = 100;
     }
-    u16 k = 100 / pathSpeed;
-    if (k > 0) {
-        GetKartCtrl()->ChaseFcnvge4(&mCamKartDiffLength, (u16*)&_3a[4], 1.0f, k);
-    }
+    k = 100 / k;
+    GetKartCtrl()->ChaseFcnvge4(&mCamKartDiffLength, (u16*)&_3a[4], 1.0f, k);
     mCam->_1b0 = mCamKartDiffLength;
     ChaseFovy(cam);
     JGeometry::TVec3f local5;
