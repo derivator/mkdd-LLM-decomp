@@ -4,6 +4,8 @@
 
 #include "Kaneshige/RaceMgr.h"
 
+#include "Kameda/J2DManager.h"
+
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
 // comments inside functions are inline functions being called in that function
@@ -149,7 +151,18 @@ void KartDemoCam::SetRaceCam() {
 
 void KartDemoCam::SetNextID() {}
 
-void KartDemoCam::DoExecution() {}
+void KartDemoCam::DoExecution() {
+    if (_38 & 1) {
+        if (_38 & 4) {
+            SetRaceCam();
+        } else {
+            if (!(_38 & 8)) {
+                GETJ2DManager()->startPreRace();
+            }
+            _38 |= 8;
+        }
+    }
+}
 
 bool KartDemoCam::GetStartID() {
     mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
@@ -159,7 +172,9 @@ bool KartDemoCam::GetStartID() {
 
 void KartDemoCam::InitStartID(bool) {}
 
-void KartDemoCam::StartDemoView() {}
+void KartDemoCam::StartDemoView() {
+    StartDemoCam();
+}
 
 void KartDemoCam::InitStartMapCam() {}
 
@@ -175,4 +190,7 @@ void KartDemoCam::StaffView() {}
 
 void KartDemoCam::SetStaffNextID() {}
 
-void KartDemoCam::SetUpStaffID() {}
+void KartDemoCam::SetUpStaffID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
+    _38 |= 0x200;
+}
