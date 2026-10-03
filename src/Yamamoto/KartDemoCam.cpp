@@ -70,11 +70,45 @@ void KartDemoCam::InitFixCam() {
     mCam->DegubCamera("InitFixCam", 31);
 }
 
-void KartDemoCam::DoFixCam() {}
+void KartDemoCam::DoFixCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    JGeometry::TVec3f local;
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixCam", 32);
+}
 
-void KartDemoCam::InitFixSearchCam() {}
+void KartDemoCam::InitFixSearchCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&local2);
+    mCam->mCameraPos.set(local2);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixSearchCam", 33);
+}
 
-void KartDemoCam::DoFixSearchCam() {}
+void KartDemoCam::DoFixSearchCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    local.set(0.0f, 1.0f, 0.0f);
+    local3.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    local2.sub(local3, mCam->mCameraLookPos);
+    f32 len = local2.length();
+    local2.normalize();
+    len *= 0.3f;
+    local2.scale(len);
+    mCam->mCameraLookPos.add(local2);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixSearchCam", 34);
+}
 
 void KartDemoCam::InitFixChaseCam() {}
 
