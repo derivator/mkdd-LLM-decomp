@@ -494,7 +494,18 @@ void KartDemoCam::DoDemoPathCam() {
     mCam->DegubCamera("DoDemoPathCam", 50);
 }
 
-void KartDemoCam::InitDemoParallelView() {}
+void KartDemoCam::InitDemoParallelView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    mCam->SetFovy(viewdata[mCam->mPtr].fovY);
+    local.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->mCameraLookPos.sub(local, mBody->_350);
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.35f, 0.0f);
+    local2.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitDemoParallelView", 51);
+}
 
 void KartDemoCam::DemoParallelView() {}
 
