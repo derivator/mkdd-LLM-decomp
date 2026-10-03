@@ -138,7 +138,15 @@ void KartDemoCam::InitStartDemoCam() {}
 
 void KartDemoCam::StartDemoCam() {}
 
-void KartDemoCam::SetLastDemo() {}
+void KartDemoCam::SetLastDemo() {
+    _38 |= 4;
+    *(u16*)&_3a[2] = 0;
+    _3a[0] = 1;
+    if (mCam->mCamNo == 0) {
+        mCam->mCtrl->mBitfield |= 2;
+    }
+    InitLastCam();
+}
 
 void KartDemoCam::SetRaceCam() {
     _38 = 0;
