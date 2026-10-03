@@ -558,11 +558,59 @@ void KartDemoCam::DemoView() {
     // void RaceMgr::requestDemoCameraID() const {}
 }
 
-void KartDemoCam::DoPathEnd(JGeometry::TVec3<float> *, float *) {}
+bool KartDemoCam::DoPathEnd(JGeometry::TVec3f* pathPtr, f32* out) {
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    f32 f = 0.0005f * (f32)cam->getPathSpeed();
+    f *= pathPtr->length();
+    if (cam->getTime() != 0) {
+        if (*(u16*)&_3a[2] < 65535) (*(u16*)&_3a[2])++;
+        if (*(u16*)&_3a[2] < cam->getTime()) goto fail;
+        if (_38 & 0x100) { SetMapNextID(); return true; }
+        else if (_38 & 0x200) { return SetStaffNextID(); }
+        else { SetNextID(); return true; }
+    } else {
+        if (f >= 5.0f) goto fail;
+        if (_38 & 0x100) { SetMapNextID(); return true; }
+        else if (_38 & 0x200) { return SetStaffNextID(); }
+        else { SetNextID(); return true; }
+    }
+fail:
+    *out = f;
+    return false;
+}
 
-void KartDemoCam::InitStartFixPathCam() {}
+void KartDemoCam::InitStartFixPathCam() {
+    JGeometry::TVec3f local;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    *(u16*)&_3a[2] = 0;
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::DoStartFixPathCam() {}
+void KartDemoCam::DoStartFixPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
 void KartDemoCam::InitStartPathCam() {}
 
