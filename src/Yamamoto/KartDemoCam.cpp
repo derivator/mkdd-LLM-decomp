@@ -557,12 +557,60 @@ void KartDemoCam::ObjectView() {
 }
 
 void KartDemoCam::DemoInitID() {
-    // void CrsData::Camera::getKind() const {}
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getKind() == 0) {
+        InitFixCam();
+    } else if (cam->getKind() == 256) {
+        InitFixSearchCam();
+    } else if (cam->getKind() == 1) {
+        InitFixPathCam();
+    } else if (cam->getKind() == 257) {
+        InitChasePathCam();
+    } else if (cam->getKind() == 2) {
+        InitFixChaseCam();
+    } else if (cam->getKind() == 258) {
+        InitChaseCam();
+    } else if (cam->getKind() == 7) {
+        InitFixPalaCam();
+    } else if (cam->getKind() == 3) {
+        InitFixSplCam();
+    } else if (cam->getKind() == 259) {
+        InitChaseSplCam();
+    } else if (cam->getKind() == 5) {
+        InitDemoPathCam();
+    } else {
+        mCam->InitOutView();
+    }
 }
 
 void KartDemoCam::InitID() {}
 
-void KartDemoCam::DoDemoView() {}
+void KartDemoCam::DoDemoView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getKind() == 0) {
+        DoFixCam();
+    } else if (cam->getKind() == 256) {
+        DoFixSearchCam();
+    } else if (cam->getKind() == 1) {
+        DoFixPathCam();
+    } else if (cam->getKind() == 257) {
+        DoChasePathCam();
+    } else if (cam->getKind() == 2) {
+        DoFixChaseCam();
+    } else if (cam->getKind() == 258) {
+        DoChaseCam();
+    } else if (cam->getKind() == 7) {
+        DoFixPalaCam();
+    } else if (cam->getKind() == 3) {
+        DoFixSplCam();
+    } else if (cam->getKind() == 259) {
+        DoChaseSplCam();
+    } else if (cam->getKind() == 5) {
+        DoDemoPathCam();
+    } else {
+        mCam->ParallelView();
+    }
+}
 
 void KartDemoCam::LiveViewChange() {
     if (mCam->mFlags & 0x100) {
