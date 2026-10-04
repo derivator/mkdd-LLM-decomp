@@ -230,7 +230,7 @@ void KartDemoCam::InitFixPathCam() {
     JGeometry::TVec3f local3;
     cam->getFrontDirection(&local3);
     KartCam* kc = mCam;
-    f32 angle = atan2f(local3.x, local3.z);
+    f32 angle = std::atan2f(local3.x, local3.z);
     GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
     mCam->SetFovy(cam->getFovy());
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
@@ -267,7 +267,7 @@ void KartDemoCam::DoFixPathCam() {
     JGeometry::TVec3f local4;
     cam->getFrontDirection(&local4);
     kc = mCam;
-    f32 angle = atan2f(local4.x, local4.z);
+    f32 angle = std::atan2f(local4.x, local4.z);
     GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
     mCam->DegubCamera("DoFixPathCam", 40);
@@ -353,7 +353,7 @@ void KartDemoCam::InitFixSplCam() {
     JGeometry::TVec3f local3;
     cam->getFrontDirection(&local3);
     kc = mCam;
-    f32 angle = atan2f(local3.x, local3.z);
+    f32 angle = std::atan2f(local3.x, local3.z);
     GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
     mCam->SetFovy(cam->getFovy());
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
@@ -391,7 +391,7 @@ void KartDemoCam::DoFixSplCam() {
     JGeometry::TVec3f local5;
     cam->getFrontDirection(&local5);
     kc = mCam;
-    f32 angle = atan2f(local5.x, local5.z);
+    f32 angle = std::atan2f(local5.x, local5.z);
     GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
     mCam->DegubCamera("DoFixSplCam", 44);
@@ -1634,19 +1634,19 @@ void KartDemoCam::StartMapCam() {
     CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
     switch (cam->getKind()) {
         case 4:
-            InitStartFixPathCam();
+            DoStartFixPathCam();
             mCam->DegubCamera("DoStartFixPathCam", 15);
             break;
         case 5:
-            InitStartPathCam();
+            DoStartPathCam();
             mCam->DegubCamera("DoStartPathCam", 16);
             break;
         case 6:
-            InitStartLookPathCam();
+            DoStartLookPathCam();
             mCam->DegubCamera("DoStartLookPathCam", 17);
             break;
         case 1:
-            InitStartOnlyPathCam();
+            DoStartOnlyPathCam();
             mCam->DegubCamera("DoStartOnlyPathCam", 18);
             break;
     }

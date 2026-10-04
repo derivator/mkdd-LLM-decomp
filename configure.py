@@ -1456,7 +1456,7 @@ config.libs = [
             Object(Matching, "Yamamoto/KartTire.cpp"),
             Object(Matching, "Yamamoto/KartThunder.cpp"),
             Object(Matching, "Yamamoto/KartCrash.cpp"),
-            Object(NonMatching, "Yamamoto/KartDemoCam.cpp"),
+            Object(Matching, "Yamamoto/KartDemoCam.cpp"),
             Object(NonMatching, "Yamamoto/KartFitParam.cpp"),
             Object(Matching, "Yamamoto/KartDisp.cpp"),
             Object(Matching, "Yamamoto/KartHandle.cpp"),
