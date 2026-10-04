@@ -790,9 +790,89 @@ void KartDemoCam::DemoGoalView() {
 }
 
 void KartDemoCam::MapView() {
-    JUTReport(0, 0, "Y_DIR%7.0f", 0.0f);
-    JUTReport(0, 0, "X_DIR%7.0f", 0.0f);
-    JUTReport(0, 0, "FOVY%7.1f", 0.0f);
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    KartGamePad* pad = gpaGamePad[1];
+
+    local.set(0.0f, 1.0f, 0.0f);
+
+    f32 dist = 0.0f;
+    if (pad->testButton(8)) {
+        dist = 50.0f;
+    } else if (pad->testButton(4)) {
+        dist = -50.0f;
+    }
+
+    if (pad->testButton(64)) {
+        *(f32 *)&_48[12] += 0.0523333f;
+    } else if (pad->testButton(32)) {
+        *(f32 *)&_48[12] -= 0.0523333f;
+    }
+
+    f32 angle = *(f32 *)&_48[12];
+
+    *(f32 *)&_48[16] += 0.0872222f * pad->getMainStickY();
+    if (*(f32 *)&_48[16] > 1.395555f) {
+        *(f32 *)&_48[16] = 1.395555f;
+    }
+    if (*(f32 *)&_48[16] < -1.395555f) {
+        *(f32 *)&_48[16] = -1.395555f;
+    }
+
+    if (pad->testButton(256)) {
+        mCam->mFovY += 1.0f;
+    } else if (pad->testButton(512)) {
+        mCam->mFovY -= 1.0f;
+    }
+    if (mCam->mFovY > 180.0f) {
+        mCam->mFovY = 180.0f;
+    }
+    if (mCam->mFovY < 1.0f) {
+        mCam->mFovY = 1.0f;
+    }
+
+    if (pad->testButton(2)) {
+        angle -= 1.57f;
+        dist = 50.0f;
+    } else if (pad->testButton(1)) {
+        angle += 1.57f;
+        dist = 50.0f;
+    }
+
+    if (pad->testButton(2048)) {
+        mCam->mCameraPos.y += 50.0f;
+    } else if (pad->testButton(1024)) {
+        mCam->mCameraPos.y -= 50.0f;
+    }
+
+    GetKartCtrl()->PolarToCross((Vec *)&mCam->mCameraPos, (Vec *)&local2, dist, 0.0f, angle);
+    GetKartCtrl()->PolarToCross((Vec *)&local2, (Vec *)&mCam->mCameraLookPos, 1000.0f, *(f32 *)&_48[16], *(f32 *)&_48[12]);
+    mCam->mCameraPos.set(local2);
+
+    if (pad->testButton(16)) {
+        mCam->mCameraPos.set(9000.0f, 3650.0f, 17000.0f);
+        mCam->mCameraLookPos.set(9728.0f, 3670.0f, 16340.0f);
+        mCam->mFovY = 40.0f;
+        *(f32 *)&_48[16] = 0.0174444f;
+        *(f32 *)&_48[12] = 2.3549921f;
+    }
+
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+
+    if (_3a[1] == 0) {
+        JUTReport(120, 80, "CAMERA");
+        JUTReport(120, 100, "X:%7.1f", mCam->mCameraPos.x);
+        JUTReport(120, 120, "Y:%7.1f", mCam->mCameraPos.y);
+        JUTReport(120, 140, "Z:%7.1f", mCam->mCameraPos.z);
+        JUTReport(290, 80, "LOOK");
+        JUTReport(290, 100, "X:%7.1f", mCam->mCameraLookPos.x);
+        JUTReport(290, 120, "Y:%7.1f", mCam->mCameraLookPos.y);
+        JUTReport(290, 140, "Z:%7.1f", mCam->mCameraLookPos.z);
+        f32 f3 = (180.0f * angle / 3.141f);
+        JUTReport(120, 160, "Y_DIR%7.0f", f3 - 360.0f * (f32)(((int)f3) / 360));
+        JUTReport(120, 180, "X_DIR%7.0f", 180.0f * *(f32 *)&_48[16] / 3.141f);
+        JUTReport(120, 200, "FOVY%7.1f", mCam->mFovY);
+    }
 }
 
 void KartDemoCam::ObjectView() {
