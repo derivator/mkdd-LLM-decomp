@@ -941,7 +941,7 @@ void KartDemoCam::DoStartChasePathCam() {
     mCam->mCameraLookPos.add(local3);
     ChaseFovy(cam);
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
-    mCam->DegubCamera("DoStartChasePathCam", 42);
+    mCam->DegubCamera("DoChasePathCam", 42);
 }
 
 void KartDemoCam::InitVsLastCam() {
