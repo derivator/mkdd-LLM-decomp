@@ -796,8 +796,52 @@ void KartDemoCam::MapView() {
 }
 
 void KartDemoCam::ObjectView() {
-    JUTReport(0, 0, "RaceMgr.h", 0);
-    JUTReport(0, 0, "range over: %d <= index=%d < %d", 0, 0, 0);
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    KartGamePad* pad = gpaGamePad[1];
+
+    local.set(0.0f, 1.0f, 0.0f);
+
+    if (pad->testButton(64)) {
+        *(f32 *)&_48[4] += 20.0f;
+    }
+    if (pad->testButton(32)) {
+        *(f32 *)&_48[4] -= 20.0f;
+    }
+    if (*(f32 *)&_48[4] > 10000.0f) {
+        *(f32 *)&_48[4] = 10000.0f;
+    }
+    if (*(f32 *)&_48[4] < 50.0f) {
+        *(f32 *)&_48[4] = 50.0f;
+    }
+
+    *(f32 *)&_48[12] += 0.0348888f * pad->getMainStickX();
+    f32 yaw = *(f32 *)&_48[12];
+    *(f32 *)&_48[16] += 0.0348888f * pad->getMainStickY();
+    if (*(f32 *)&_48[16] > 1.395555f) {
+        *(f32 *)&_48[16] = 1.395555f;
+    }
+    if (*(f32 *)&_48[16] < -1.395555f) {
+        *(f32 *)&_48[16] = -1.395555f;
+    }
+
+    GetKartCtrl()->PolarToCross((Vec *)&_8c, (Vec *)&mCam->mCameraPos, *(f32 *)&_48[4], *(f32 *)&_48[16], *(f32 *)&_48[12]);
+    mCam->mCameraLookPos.set(_8c);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+
+    if (_3a[1] == 0) {
+        JUTReport(120, 80, "CAMERA");
+        JUTReport(120, 100, "X:%7.1f", mCam->mCameraPos.x);
+        JUTReport(120, 120, "Y:%7.1f", mCam->mCameraPos.y);
+        JUTReport(120, 140, "Z:%7.1f", mCam->mCameraPos.z);
+        JUTReport(290, 80, "LOOK");
+        JUTReport(290, 100, "X:%7.1f", mCam->mCameraLookPos.x);
+        JUTReport(290, 120, "Y:%7.1f", mCam->mCameraLookPos.y);
+        JUTReport(290, 140, "Z:%7.1f", mCam->mCameraLookPos.z);
+        f32 f3 = (3.141f * yaw / 180.0f);
+        JUTReport(120, 160, "Y_DIR%7.0f", f3 - 360.0f * (f32)(((int)f3) / 360));
+        JUTReport(120, 180, "X_DIR%7.0f", 3.141f * *(f32 *)&_48[16] / 180.0f);
+    }
 }
 
 void KartDemoCam::DemoInitID() {
