@@ -634,7 +634,7 @@ void KartDemoCam::InitDemoParallelView() {
     mCam->SetFovy(viewdata[mCam->mPtr].fovY);
     local.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
     mCam->mCameraLookPos.sub(local, mBody->_350);
-    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.35f, 0.0f);
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.348888f, 0.0f);
     local2.set(0.0f, 1.0f, 0.0f);
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
     mCam->DegubCamera("InitDemoParallelView", 51);
@@ -647,7 +647,7 @@ void KartDemoCam::DemoParallelView() {
     mCam->SetFovy(viewdata[mCam->mPtr].fovY);
     local.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
     mCam->mCameraLookPos.sub(local, mBody->_350);
-    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.35f, 0.0f);
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.348888f, 0.0f);
     local2.set(0.0f, 1.0f, 0.0f);
     C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
     mCam->DegubCamera("DemoParallelView", 52);
@@ -1405,6 +1405,91 @@ void KartDemoCam::InitLastCam() {
     }
 }
 void KartDemoCam::LastCam() {
+    if (RaceMgr::getCurrentManager()->getCameraNumber() != 1) {
+        VsLastCam();
+        return;
+    }
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local3;
+    local2.set(0.0f, 1.0f, 0.0f);
+    switch (_3a[0]) {
+        case 1:
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (GETJ2DManager()->getPreRaceWipeType() == 0) {
+                if (*(u16 *)&_3a[2] >= 10) {
+                    _3a[0] = 2;
+                }
+            } else {
+                if (*(u16 *)&_3a[2] >= 3) {
+                    _3a[0] = 2;
+                }
+            }
+            break;
+        case 2:
+            mCam->mPathData[0].set(mCam->mCameraPos);
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (*(u16 *)&_3a[2] >= 5) {
+                _3a[0] = 4;
+            }
+            break;
+        case 3:
+            break;
+        case 4: {
+            f32 len;
+            local.sub(_a4, mCam->mCameraLookPos);
+            len = local.length();
+            GetKartCtrl()->ChaseFcnvge((f32 *)&_48[36], (u16 *)&_3a[6], 0.08f, 3200);
+            len *= *(f32 *)&_48[36];
+            local.normalize();
+            mCam->mCameraLookPos.x += local.x * len;
+            mCam->mCameraLookPos.y += local.y * len;
+            mCam->mCameraLookPos.z += local.z * len;
+            mCam->mPathSpline->setAll(mCam->mPathData);
+            mCam->mPathSpline->getBezierPoint(&local3, mCam->_1b0);
+            mCam->mCameraPos.set(local3);
+            GetKartCtrl()->ChaseFcnvge(&mCamKartDiffLength, (u16 *)&_3a[4], 1.0f, 2000);
+            mCam->_1b0 = mCamKartDiffLength;
+            if ((mCam->mTargetBody->mGameStatus & 0x4) != 0) {
+                if (mCam->_1b0 >= 0.9999f && len < 0.01f) {
+                    _3a[0] = 5;
+                    *(u16 *)&_3a[2] = 0;
+                }
+            }
+            break;
+        }
+        case 5: {
+            f32 len;
+            mCam->DoLookChase();
+            f32 angle = 3.141f * mBody->_4e8 / 180.0f;
+            angle += 3.141f * mCam->_180 / 180.0f;
+            GetKartCtrl()->ChaseFnumber(&mCam->_1ac, angle, 0.04f);
+            GetKartCtrl()->ChaseFnumber(&mCam->_18c, mBody->_4e4, 0.02f);
+            KartCam* c = mCam;
+            f32 azimuth = 3.14f + std::atan2f(c->mTargetBody->_308.x, c->mTargetBody->_308.z);
+            GetKartCtrl()->PolarToCross(&c->mCameraLookPos, &_74, c->_18c, c->_1ac, azimuth);
+            local.sub(_74, mCam->mCameraPos);
+            len = local.length();
+            local.normalize();
+            mCam->mCameraPos.x += local.x * len;
+            mCam->mCameraPos.y += local.y * len;
+            mCam->mCameraPos.z += local.z * len;
+            local.sub(mCam->mCameraLookPos, mCam->mCameraPos);
+            local.normalize();
+            local.scale(mCam->_18c);
+            mCam->mCameraPos.sub(mCam->mCameraLookPos, local);
+            mCam->_200.set(mCam->mCameraPos.x, mCam->mCameraPos.y, mCam->mCameraPos.z);
+            if ((mBody->mCarStatus & 0x8000) != 0 || mCam->_1ac >= angle - 0.01f || GetKartCtrl()->GetCarSpeed(mBody->mMynum) >= 5.0f) {
+                _38 = 0;
+                mCam->mMode = 0;
+                mCam->OutView();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
     mCam->DegubCamera("LastCam", 27);
 }
 
