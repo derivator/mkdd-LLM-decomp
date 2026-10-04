@@ -1080,7 +1080,44 @@ void KartDemoCam::InitStaffView() {
     }
 }
 
-void KartDemoCam::StaffView() {}
+void KartDemoCam::StaffView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (!(_38 & 0x400)) {
+        if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+            mStartId = RaceMgr::getManager()->requestDemoCameraID();
+            _38 |= 0x400;
+            InitStaffView();
+            return;
+        }
+    }
+    if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+        cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    }
+    switch (cam->getKind()) {
+        case 0:
+            DoStartFixCam();
+            break;
+        case 4:
+            DoStartFixPathCam();
+            mCam->DegubCamera("DoStartFixPathCam", 15);
+            break;
+        case 5:
+            DoStartPathCam();
+            mCam->DegubCamera("DoStartPathCam", 16);
+            break;
+        case 6:
+            DoStartLookPathCam();
+            mCam->DegubCamera("DoStartLookPathCam", 17);
+            break;
+        case 1:
+            DoStartOnlyPathCam();
+            mCam->DegubCamera("DoStartOnlyPathCam", 18);
+            break;
+        case 257:
+            DoStartChasePathCam();
+            break;
+    }
+}
 
 bool KartDemoCam::SetStaffNextID() {
     RaceMgr::getManager()->getCourse()->getCrsData();

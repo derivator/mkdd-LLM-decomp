@@ -421,6 +421,11 @@ void RaceMgr::editRaceInfoForDebug()
     }
 }
 
+int RaceMgr::requestDemoCameraID() const
+{
+    return mRaceDirector->requestDemoCameraID();
+}
+
 void RaceMgr::createConsole()
 {
     int cnsCnt = mRaceInfo->getConsoleNumber();
