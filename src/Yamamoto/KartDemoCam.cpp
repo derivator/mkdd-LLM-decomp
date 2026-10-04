@@ -1003,7 +1003,34 @@ void KartDemoCam::SetUpMapID() {
     }
 }
 
-void KartDemoCam::InitStaffView() {}
+void KartDemoCam::InitStaffView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    cam->getKind();
+    switch (cam->getKind()) {
+        case 0:
+            InitStartFixCam();
+            break;
+        case 4:
+            InitStartFixPathCam();
+            mCam->DegubCamera("InitStartFixPathCam", 11);
+            break;
+        case 5:
+            InitStartPathCam();
+            mCam->DegubCamera("InitStartPathCam", 12);
+            break;
+        case 6:
+            InitStartLookPathCam();
+            mCam->DegubCamera("InitStartLookPathCam", 13);
+            break;
+        case 1:
+            InitStartOnlyPathCam();
+            mCam->DegubCamera("InitStartOnlyPathCam", 14);
+            break;
+        case 257:
+            InitStartChasePathCam();
+            break;
+    }
+}
 
 void KartDemoCam::StaffView() {}
 
