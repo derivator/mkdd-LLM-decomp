@@ -960,6 +960,45 @@ void KartDemoCam::InitVsLastCam() {
 }
 
 void KartDemoCam::VsLastCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    local.set(0.0f, 1.0f, 0.0f);
+    switch (_3a[0]) {
+        case 1:
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (GETJ2DManager()->getPreRaceWipeType() == 0) {
+                if (*(u16 *)&_3a[2] >= 10) {
+                    _3a[0] = 2;
+                }
+            } else {
+                if (*(u16 *)&_3a[2] >= 3) {
+                    _3a[0] = 2;
+                }
+            }
+            break;
+        case 2:
+            mCam->mPathData[0].set(mCam->mCameraPos);
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (*(u16 *)&_3a[2] >= 5) {
+                _3a[0] = 4;
+            }
+            break;
+        case 3:
+            break;
+        case 4:
+            GetKartCtrl()->ChaseFnumber(&mCam->_18c, mBody->_4e4, 0.03f);
+            GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+            if (RaceMgr::getCurrentManager()->isAbleStart() || (mBody->mCarStatus & 0x8000) != 0 || GetKartCtrl()->GetCarSpeed(mBody->mMynum) >= 0.0348888f) {
+                _38 = 0;
+                mCam->mMode = 0;
+                mCam->OutView();
+            }
+            break;
+        default:
+            break;
+    }
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
     mCam->DegubCamera("VsLastCam", 29);
 }
 
