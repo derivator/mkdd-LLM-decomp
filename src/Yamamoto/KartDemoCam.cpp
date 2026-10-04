@@ -688,12 +688,12 @@ void KartDemoCam::DemoView() {
         if (RaceMgr::getCurrentManager()->isAwardDemoMode() && RaceMgr::getCurrentManager()->getAwardKartNo() == -1) {
             mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6E657874);
         }
-        CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
-        if (mCam->mCurCamIdx < 0 || (_38 & 0x30)) {
-            DemoParallelView();
-        } else {
-            DoDemoView();
-        }
+    }
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (mCam->mCurCamIdx < 0 || (_38 & 0x30)) {
+        DemoParallelView();
+    } else {
+        DoDemoView();
     }
 }
 

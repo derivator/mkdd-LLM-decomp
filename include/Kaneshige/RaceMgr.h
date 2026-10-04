@@ -191,7 +191,7 @@ public:
     bool isRaceModeVs() const { return getRaceMode() == VERSUS_RACE; }
     bool isStaffRoll() { return getRaceMode() == STAFF_ROLL; } // pls don't tell me it's stored as local variable
     bool isAwardDemoMode() { return getRaceMode() == AWARD_DEMO; }
-    int requestDemoCameraID() const;
+    int requestDemoCameraID() const { return mRaceDirector->requestDemoCameraID(); }
     bool isReplayMode() const { return mReplayMode & 1; }
     bool isActiveAreaLight() const { return mAreaLight & 1; }
     void activeAreaLight() { mAreaLight |= 1; }
