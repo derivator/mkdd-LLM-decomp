@@ -631,7 +631,40 @@ void KartDemoCam::LiveViewChange() {
 }
 
 void KartDemoCam::DemoView() {
-    // void RaceMgr::requestDemoCameraID() const {}
+    if (_38 & 0x80) {
+        mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6D696E69);
+    } else {
+        if (!(_38 & 0x40)) {
+            if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+                mCam->mCurCamIdx = RaceMgr::getManager()->requestDemoCameraID();
+                _38 |= 0x40;
+                InitID();
+                return;
+            }
+        }
+        if (!(mCam->mFlags & 0x100) && (mBody->mGameStatus & 0x40)) {
+            DemoGoalView();
+            return;
+        }
+        if (!(_38 & 0x40)) {
+            mCam->mArea.searchCamera(mBody->mPos);
+            LiveViewChange();
+            if (mCam->mArea.getCameraID() != mCam->mCurCamIdx) {
+                _38 &= ~0x10;
+                InitID();
+                return;
+            }
+        }
+        if (RaceMgr::getCurrentManager()->isAwardDemoMode() && RaceMgr::getCurrentManager()->getAwardKartNo() == -1) {
+            mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6E657874);
+        }
+        CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+        if (mCam->mCurCamIdx < 0 || (_38 & 0x30)) {
+            DemoParallelView();
+        } else {
+            DoDemoView();
+        }
+    }
 }
 
 bool KartDemoCam::DoPathEnd(JGeometry::TVec3f* pathPtr, f32* out) {
