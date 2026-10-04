@@ -14,7 +14,17 @@
 
 static const f32 _rodataPrefix[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-void KartDemoCam::Init(KartCam *) {}
+void KartDemoCam::Init(KartCam *cam) {
+    mCam = cam;
+    mBody = mCam->getBody();
+    _38 = 0;
+    _3a[1] = 0;
+    mStartId = -1;
+    *(f32 *)&_48[8] = 0.0f;
+    *(f32 *)&_48[16] = 0.0f;
+    *(f32 *)&_48[12] = 0.0f;
+    *(f32 *)&_48[4] = 1000.0f;
+}
 
 void KartDemoCam::ChaseFovy(const CrsData::Camera *cam) {
     f32 fovy = mCam->GetFovy();
