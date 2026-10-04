@@ -10,6 +10,8 @@
 
 #include "Kaneshige/Course/CrsGround.h"
 
+#include <std/math.h>
+
 // comments inside functions are inline functions being called in that function
 
 static const f32 _rodataPrefix[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -799,6 +801,17 @@ void KartDemoCam::InitStartChasePathCam() {
 void KartDemoCam::DoStartChasePathCam() {}
 
 void KartDemoCam::InitVsLastCam() {
+    JGeometry::TVec3f local;
+    *(u16 *)&_3a[2] = 0;
+    *(f32 *)&_48[36] = 0.0f;
+    *(u16 *)&_3a[6] = 1;
+    mCamKartDiffLength = 0.0f;
+    *(u16 *)&_3a[4] = 1;
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->InitOutView();
+    mCam->_18c *= 3.5f;
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
     mCam->DegubCamera("InitVsLastCam", 30);
 }
 
