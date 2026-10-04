@@ -10,6 +10,8 @@
 
 #include "Kaneshige/Course/CrsGround.h"
 
+#include "Sato/GeographyObjMgr.h"
+
 #include <std/math.h>
 
 // comments inside functions are inline functions being called in that function
@@ -1003,8 +1005,36 @@ void KartDemoCam::VsLastCam() {
 }
 
 void KartDemoCam::InitLastCam() {
-    // void TJugem::getPosition() const {}
-    mCam->DegubCamera("InitLastCam", 28);
+    if (RaceMgr::getCurrentManager()->getCameraNumber() != 1) {
+        InitVsLastCam();
+    } else {
+        JGeometry::TVec3f local;
+        *(u16 *)&_3a[2] = 0;
+        *(f32 *)&_48[36] = 0.0f;
+        *(u16 *)&_3a[6] = 1;
+        mCamKartDiffLength = 0.0f;
+        *(u16 *)&_3a[4] = 1;
+        local.set(0.0f, 1.0f, 0.0f);
+        mCam->InitOutView();
+        TJugem *jugem = GetGeoObjMgr()->getJugem(mCam->mCamNo);
+        mCam->_18c *= 0.95f;
+        mCam->_1ac *= 0.15f;
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+        mCamKartDiff.set(mCam->mCameraPos);
+        _a4.set(mCam->mCameraLookPos);
+        mCam->mCameraLookPos.set(jugem->getPosition());
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraLookPos, 80.0f, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 200.0f, -0.523333f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 2.09333f);
+        mCam->mPathData[0].set(mCam->mCameraPos);
+        GetKartCtrl()->PolarToCross(&_a4, &mCam->mPathData[1], 1.3f * mCam->mTargetBody->_4e4, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 1.046666f);
+        GetKartCtrl()->PolarToCross(&_a4, &mCam->mPathData[2], mCam->mTargetBody->_4e4, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 1.91888f);
+        mCam->mPathData[3].set(mCamKartDiff);
+        mCam->_1b0 = 0.0f;
+        mCam->_1b4 = 0.0f;
+        mCam->mPathSpline->setAll(mCam->mPathData);
+        C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+        mCam->DegubCamera("InitLastCam", 28);
+    }
 }
 void KartDemoCam::LastCam() {
     mCam->DegubCamera("LastCam", 27);
