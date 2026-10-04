@@ -654,6 +654,76 @@ void KartDemoCam::DemoParallelView() {
 }
 
 void KartDemoCam::InitDemoGoalView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    Mtx local5;
+    Mtx local6;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+
+    if (crsData->searchCameraID(0x70617261) == -1) {
+        InitDemoParallelView();
+        return;
+    }
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(crsData->searchCameraID(0x70617261));
+
+    if (mCam->mTargetBody->mCarStatus & 0x100000) {
+        mPosMtx[0][0] = 1.0f;
+        mPosMtx[1][0] = 0.0f;
+        mPosMtx[2][0] = 0.0f;
+
+        mPosMtx[0][1] = 0.0f;
+        mPosMtx[1][1] = 1.0f;
+        mPosMtx[2][1] = 0.0f;
+
+        mPosMtx[0][2] = 0.0f;
+        mPosMtx[1][2] = 0.0f;
+        mPosMtx[2][2] = 1.0f;
+
+        mPosMtx[0][3] = mCam->mTargetBody->_110[0][3];
+        mPosMtx[1][3] = mCam->mTargetBody->_110[1][3];
+        mPosMtx[2][3] = mCam->mTargetBody->_110[2][3];
+    } else {
+        PSMTXCopy(mCam->mTargetBody->_110, mPosMtx);
+    }
+
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&local4);
+    mCam->mCameraLookPos.set(mBody->mPos);
+    mCam->mCameraLookPos.y += 30.0f;
+    if (mCam->mTargetBody->getThunder()->mFlags & 1) {
+        if (mCam->mTargetBody->mIdx == 0x10) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0x11) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0xd) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 5) {
+            mCam->mCameraLookPos.y += 40.0f;
+        }
+    }
+
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mPosMtx, local5, local5);
+    mCam->mCameraPos.x = local5[0][2] * local4.z + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = local5[1][2] * local4.z + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = local5[2][2] * local4.z + mCam->mCameraLookPos.z;
+
+    cam->getTargetPos2(&local4);
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mPosMtx, local5, local5);
+    local4.z = 100.0f;
+    mCam->mCameraLookPos.x = local5[0][2] * local4.z + mCam->mCameraPos.x;
+    mCam->mCameraLookPos.y = local5[1][2] * local4.z + mCam->mCameraPos.y;
+    mCam->mCameraLookPos.z = local5[2][2] * local4.z + mCam->mCameraPos.z;
+
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
     mCam->DegubCamera("InitDemoGoalView", 53);
 }
 
