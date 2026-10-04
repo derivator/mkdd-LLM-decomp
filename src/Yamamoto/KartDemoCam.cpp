@@ -583,7 +583,35 @@ void KartDemoCam::DemoInitID() {
     }
 }
 
-void KartDemoCam::InitID() {}
+void KartDemoCam::InitID() {
+    if (mCam->mFlags & 0x200) {
+        mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6D696E69);
+        _38 |= 0x80;
+    } else {
+        if (!(mBody->mGameStatus & 0x40) && !(_38 & 0x40)) {
+            mCam->mCurCamIdx = mCam->mArea.getCameraID();
+        }
+    }
+    if (mCam->mFlags & 0x100) {
+        InitDemoParallelView();
+        _38 |= 0x20;
+    } else {
+        if (mBody->mGameStatus & 0x40) {
+            InitDemoGoalView();
+        } else {
+            if (mCam->mCurCamIdx < 0 || (mBody->mCarStatus & 0x400000)) {
+                InitDemoParallelView();
+                _38 |= 0x10;
+            } else {
+                if (RaceMgr::getCurrentManager()->isAwardDemoMode() && RaceMgr::getCurrentManager()->getAwardKartNo() == -1) {
+                    mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6E657874);
+                }
+                RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+                DemoInitID();
+            }
+        }
+    }
+}
 
 void KartDemoCam::DoDemoView() {
     CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
