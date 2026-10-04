@@ -552,7 +552,23 @@ void KartDemoCam::InitID() {}
 
 void KartDemoCam::DoDemoView() {}
 
-void KartDemoCam::LiveViewChange() {}
+void KartDemoCam::LiveViewChange() {
+    if (mCam->mFlags & 0x100) {
+        int numKarts = GetKartCtrl()->GetKartNumber();
+        int i = 0;
+        for (; i < numKarts; i++) {
+            if (RCMGetKartChecker(i)->getRank() == 1) break;
+        }
+        if (i >= numKarts) return;
+        if (i == mCam->GetTargetNum()) return;
+        GETJ2DManager()->setStatus2Kart(mCam->mCamNo, i);
+        mCam->SetTargetNum((u8)i);
+        mCam->SetTarget();
+        mBody = mCam->getBody();
+        InitDemoParallelView();
+        _38 |= 32;
+    }
+}
 
 void KartDemoCam::DemoView() {
     // void RaceMgr::requestDemoCameraID() const {}
