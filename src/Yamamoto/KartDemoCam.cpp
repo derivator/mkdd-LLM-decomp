@@ -1071,14 +1071,16 @@ bool KartDemoCam::DoPathEnd(JGeometry::TVec3f* pathPtr, f32* out) {
     if (cam->getTime() != 0) {
         if (*(u16*)&_3a[2] < 65535) (*(u16*)&_3a[2])++;
         if (*(u16*)&_3a[2] < cam->getTime()) goto fail;
-        if (_38 & 0x100) { SetMapNextID(); return true; }
-        else if (_38 & 0x200) { return SetStaffNextID(); }
-        else { SetNextID(); return true; }
+        if (_38 & 0x100) { SetMapNextID(); }
+        else if (_38 & 0x200) { if (!SetStaffNextID()) return false; }
+        else { SetNextID(); }
+        return true;
     } else {
         if (!(f < 5.0f)) goto fail;
-        if (_38 & 0x100) { SetMapNextID(); return true; }
-        else if (_38 & 0x200) { return SetStaffNextID(); }
-        else { SetNextID(); return true; }
+        if (_38 & 0x100) { SetMapNextID(); }
+        else if (_38 & 0x200) { if (!SetStaffNextID()) return false; }
+        else { SetNextID(); }
+        return true;
     }
 fail:
     *out = f;
