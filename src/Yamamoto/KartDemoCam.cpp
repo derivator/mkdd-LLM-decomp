@@ -1,161 +1,1762 @@
 #include "Yamamoto/KartDemoCam.h"
 
+#include "Yamamoto/kartCamera.h"
+
+#include "Kaneshige/RaceMgr.h"
+
+#include "Kameda/J2DManager.h"
+
 #include "JSystem/JAudio/JASFakeMatch2.h"
+
+#include "Kaneshige/Course/CrsGround.h"
+
+#include "Sato/GeographyObjMgr.h"
+
+#include <std/math.h>
 
 // comments inside functions are inline functions being called in that function
 
-void KartDemoCam::Init(KartCam *) {}
+static const f32 _rodataPrefix[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-void KartDemoCam::ChaseFovy(const CrsData::Camera *) {
-    // void KartCam::SetFovy(float) {}
-    // void CrsData::Camera::getFovy() const {}
-    // void CrsData::Camera::getFovy2() const {}
+void KartDemoCam::Init(KartCam *cam) {
+    mCam = cam;
+    mBody = mCam->getBody();
+    _38 = 0;
+    _3a[1] = 0;
+    mStartId = -1;
+    *(f32 *)&_48[8] = 0.0f;
+    *(f32 *)&_48[16] = 0.0f;
+    *(f32 *)&_48[12] = 0.0f;
+    *(f32 *)&_48[4] = 1000.0f;
 }
 
-void KartDemoCam::DoInitCol() {}
+void KartDemoCam::ChaseFovy(const CrsData::Camera *cam) {
+    f32 fovy = mCam->GetFovy();
+    f32 camFovy2 = cam->getFovy2();
+    if (camFovy2 == 0.0f) {
+        mCam->SetFovy(cam->getFovy());
+    }
+    else {
+        GetKartCtrl()->ChaseFnumber(&fovy, camFovy2, 0.0f);
+        mCam->SetFovy(fovy);
+    }
+}
 
-void KartDemoCam::DoCol() {}
+void KartDemoCam::DoInitCol() {
+    _80.set(mCam->mCameraPos);
+}
+
+void KartDemoCam::DoCol() {
+    CrsGround ground;
+    JGeometry::TVec3f normal;
+    ground.search(mCam->mCameraPos, _80);
+    if (!(mBody->mCarStatus & 0x400000)) {
+        if (ground.getAttribute() == 2 || ground.getAttribute() == 18) {
+            f32 f = ground.getWallNormal(&normal, nullptr);
+            mCam->mCameraPos.x += normal.x * f * 2.0f;
+            mCam->mCameraPos.y += normal.y * f * 2.0f;
+            mCam->mCameraPos.z += normal.z * f * 2.0f;
+        }
+        else {
+            f32 height = ground.getHeight();
+            f32 diff = (mCam->mCameraPos.y - 30.0f) - height;
+            if (diff < 0.0f) {
+                mCam->mCameraPos.y -= diff;
+            }
+        }
+    }
+    _80.set(mCam->mCameraPos);
+}
 
 void KartDemoCam::InitFixCam() {
-    // void CrsData::Camera::getPosition(JGeometry::TVec3<float> *) const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&local2);
+    mCam->mCameraPos.set(local2);
+    mCam->mCameraLookPos.set(mCam->mCameraPos);
+    JGeometry::TVec3f local3;
+    cam->getFrontDirection(&local3);
+    mCam->mCameraLookPos.x += 100.0f * local3.x;
+    mCam->mCameraLookPos.y += 100.0f * local3.y;
+    mCam->mCameraLookPos.z += 100.0f * local3.z;
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixCam", 31);
 }
 
-void KartDemoCam::DoFixCam() {}
+void KartDemoCam::DoFixCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    JGeometry::TVec3f local;
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixCam", 32);
+}
 
-void KartDemoCam::InitFixSearchCam() {}
+void KartDemoCam::InitFixSearchCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&local2);
+    mCam->mCameraPos.set(local2);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixSearchCam", 33);
+}
 
-void KartDemoCam::DoFixSearchCam() {}
+void KartDemoCam::DoFixSearchCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    local.set(0.0f, 1.0f, 0.0f);
+    local3.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    local2.sub(local3, mCam->mCameraLookPos);
+    f32 len = local2.length();
+    local2.normalize();
+    len *= 0.3f;
+    local2.scale(len);
+    mCam->mCameraLookPos.add(local2);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixSearchCam", 34);
+}
 
-void KartDemoCam::InitFixChaseCam() {}
+void KartDemoCam::InitFixChaseCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&mCam->mCameraPos);
+    local3.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCamKartDiff.sub(mCam->mCameraPos, local3);
+    mCamKartDiffLength = mCamKartDiff.length();
+    mCamKartDiff.normalize();
+    mCam->mCameraPos.x = mCamKartDiff.x * mCamKartDiffLength + local3.x;
+    mCam->mCameraPos.y = mCamKartDiff.y * mCamKartDiffLength + local3.y;
+    mCam->mCameraPos.z = mCamKartDiff.z * mCamKartDiffLength + local3.z;
+    mCam->mCameraLookPos.set(mCam->mCameraPos);
+    JGeometry::TVec3f local4;
+    cam->getFrontDirection(&local4);
+    mCam->mCameraLookPos.x += 100.0f * local4.x;
+    mCam->mCameraLookPos.y += 100.0f * local4.y;
+    mCam->mCameraLookPos.z += 100.0f * local4.z;
+    mCam->SetFovy(cam->getFovy());
+    DoInitCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixChaseCam", 35);
+}
 
-void KartDemoCam::DoFixChaseCam() {}
+void KartDemoCam::DoFixChaseCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    local3.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->mCameraPos.x = mCamKartDiff.x * mCamKartDiffLength + local3.x;
+    mCam->mCameraPos.y = mCamKartDiff.y * mCamKartDiffLength + local3.y;
+    mCam->mCameraPos.z = mCamKartDiff.z * mCamKartDiffLength + local3.z;
+    mCam->mCameraLookPos.set(mCam->mCameraPos);
+    JGeometry::TVec3f local4;
+    cam->getFrontDirection(&local4);
+    mCam->mCameraLookPos.x += 100.0f * local4.x;
+    mCam->mCameraLookPos.y += 100.0f * local4.y;
+    mCam->mCameraLookPos.z += 100.0f * local4.z;
+    DoCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixChaseCam", 36);
+}
 
-void KartDemoCam::InitChaseCam() {}
+void KartDemoCam::InitChaseCam() {
+    JGeometry::TVec3f local;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    cam->getPosition(&mCam->mCameraPos);
+    mCamKartDiff.sub(mCam->mCameraPos, mCam->mCameraLookPos);
+    mCamKartDiffLength = mCamKartDiff.length();
+    mCamKartDiff.normalize();
+    mCam->mCameraPos.x = mCamKartDiff.x * mCamKartDiffLength + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = mCamKartDiff.y * mCamKartDiffLength + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = mCamKartDiff.z * mCamKartDiffLength + mCam->mCameraLookPos.z;
+    mCam->SetFovy(cam->getFovy());
+    DoInitCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitChaseCam", 37);
+}
 
-void KartDemoCam::DoChaseCam() {}
+void KartDemoCam::DoChaseCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    local4.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    local3.sub(local4, mCam->mCameraLookPos);
+    f32 len = local3.length();
+    local3.normalize();
+    len *= 0.6f;
+    local3.scale(len);
+    mCam->mCameraLookPos.add(local3);
+    mCam->mCameraPos.x = mCamKartDiff.x * mCamKartDiffLength + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = mCamKartDiff.y * mCamKartDiffLength + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = mCamKartDiff.z * mCamKartDiffLength + mCam->mCameraLookPos.z;
+    DoCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoChaseCam", 38);
+}
 
 void KartDemoCam::InitFixPathCam() {
-    // void CrsData::Camera::getPathID() const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getPathID() < 0) {
+        mCam->InitOutView();
+        return;
+    }
+    CrsData::PathData* pathData = crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    JGeometry::TVec3f local3;
+    cam->getFrontDirection(&local3);
+    KartCam* kc = mCam;
+    f32 angle = std::atan2f(local3.x, local3.z);
+    GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixPathCam", 39);
 }
 
 void KartDemoCam::DoFixPathCam() {
-    // void CrsData::Camera::getPathSpeed() const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    KartCam* kc;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    if (cam->getPathID() < 0) {
+        mCam->OutView();
+        return;
+    }
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    int pathSpeed = cam->getPathSpeed();
+    if (pathSpeed == 0) {
+        pathSpeed = 1;
+    }
+    if (pathSpeed > 100) {
+        pathSpeed = 100;
+    }
+    f32 scale = 0.0005f * (f32)pathSpeed * local3.length();
+    local3.normalize();
+    local3.scale(scale);
+    mCam->mCameraPos.add(local3);
+    ChaseFovy(cam);
+    JGeometry::TVec3f local4;
+    cam->getFrontDirection(&local4);
+    kc = mCam;
+    f32 angle = std::atan2f(local4.x, local4.z);
+    GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixPathCam", 40);
 }
 
-void KartDemoCam::InitChasePathCam() {}
+void KartDemoCam::InitChasePathCam() {
+    JGeometry::TVec3f local;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getPathID() < 0) {
+        mCam->InitOutView();
+        return;
+    }
+    CrsData::PathData* pathData = crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitChasePathCam", 41);
+}
 
-void KartDemoCam::DoChasePathCam() {}
+void KartDemoCam::DoChasePathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    JGeometry::TVec3f local5;
+    local.set(0.0f, 1.0f, 0.0f);
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    if (cam->getPathID() < 0) {
+        mCam->OutView();
+        return;
+    }
+    local2.set(pointData->pos);
+    local5.sub(local2, mCam->mCameraPos);
+    int pathSpeed = cam->getPathSpeed();
+    if (pathSpeed == 0) {
+        pathSpeed = 1;
+    }
+    if (pathSpeed > 100) {
+        pathSpeed = 100;
+    }
+    f32 scale = 0.0005f * (f32)pathSpeed * local5.length();
+    local5.normalize();
+    local5.scale(scale);
+    mCam->mCameraPos.add(local5);
+    local4.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    local3.sub(local4, mCam->mCameraLookPos);
+    f32 len = local3.length();
+    local3.normalize();
+    len *= 0.6f;
+    local3.scale(len);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoChasePathCam", 42);
+}
 
-void KartDemoCam::InitFixSplCam() {}
+void KartDemoCam::InitFixSplCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    KartCam* kc;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getPathID() < 0) {
+        mCam->InitOutView();
+        return;
+    }
+    mCamKartDiffLength = 0.0f;
+    *(u16*)&_3a[4] = 1;
+    CrsData::PathData* pathData = crsData->getPathData((u16)cam->getPathID());
+    mCam->_1b0 = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        mCam->mPathData[i].set(crsData->getPointData((u16)cam->getPathID(), (u16)i)->pos);
+    }
+    mCam->mPathSpline->setAll(mCam->mPathData);
+    mCam->mCameraPos.set(mCam->mPathData[0]);
+    mCam->_1b0 = 0.0f;
+    local.set(0.0f, 1.0f, 0.0f);
+    JGeometry::TVec3f local3;
+    cam->getFrontDirection(&local3);
+    kc = mCam;
+    f32 angle = std::atan2f(local3.x, local3.z);
+    GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixSplCam", 43);
+}
 
-void KartDemoCam::DoFixSplCam() {}
+void KartDemoCam::DoFixSplCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    KartCam* kc;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    if (cam->getPathID() < 0) {
+        mCam->OutView();
+        return;
+    }
+    mCam->mPathSpline->setAll(mCam->mPathData);
+    mCam->mPathSpline->getBezierPoint(&local3, mCam->_1b0);
+    mCam->mCameraPos.set(local3);
+    u16 k = cam->getPathSpeed();
+    if (k == 0) {
+        k = 1;
+    }
+    if (k > 100) {
+        k = 100;
+    }
+    k = 100 / k;
+    GetKartCtrl()->ChaseFcnvge4(&mCamKartDiffLength, (u16*)&_3a[4], 1.0f, k);
+    mCam->_1b0 = mCamKartDiffLength;
+    ChaseFovy(cam);
+    JGeometry::TVec3f local5;
+    cam->getFrontDirection(&local5);
+    kc = mCam;
+    f32 angle = std::atan2f(local5.x, local5.z);
+    GetKartCtrl()->PolarToCross(&kc->mCameraPos, &kc->mCameraLookPos, 50.0f, 0.0f, angle);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixSplCam", 44);
+}
 
-void KartDemoCam::InitChaseSplCam() {}
+void KartDemoCam::InitChaseSplCam() {
+    JGeometry::TVec3f local;
+    CrsData::Camera* cam;
+    CrsData* crsData;
+    crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getPathID() < 0) {
+        mCam->InitOutView();
+        return;
+    }
+    mCamKartDiffLength = 0.0f;
+    *(u16*)&_3a[4] = 1;
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->_1b0 = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        mCam->mPathData[i].set(crsData->getPointData((u16)cam->getPathID(), (u16)i)->pos);
+    }
+    mCam->mPathSpline->setAll(mCam->mPathData);
+    mCam->mCameraPos.set(mCam->mPathData[0]);
+    mCam->_1b0 = 0.0f;
+    mCam->_e5 = 0;
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitChaseSplCam", 45);
+}
 
-void KartDemoCam::DoChaseSplCam() {}
+void KartDemoCam::DoChaseSplCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f diff;
+    JGeometry::TVec3f lookPos;
+    JGeometry::TVec3f d;
+    JGeometry::TVec3f bezier;
+    JGeometry::TVec3f f;
+
+    local.set(0.0f, 1.0f, 0.0f);
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    crsData->getPointData((u16)cam->getPathID(), 1);
+    if (cam->getPathID() < 0) {
+        mCam->OutView();
+        return;
+    }
+    mCam->mPathSpline->setAll(mCam->mPathData);
+    mCam->mPathSpline->getBezierPoint(&bezier, mCam->_1b0);
+    mCam->mCameraPos.set(bezier);
+    u16 k = (u16)cam->getPathSpeed();
+    if (k == 0) k = 1;
+    if (k > 100) k = 100;
+    k = 100 / k;
+    GetKartCtrl()->ChaseFcnvge4(&mCamKartDiffLength, (u16*)&_3a[4], 1.0f, k);
+    mCam->_1b0 = mCamKartDiffLength;
+    lookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    diff.sub(lookPos, mCam->mCameraLookPos);
+    f32 len = diff.length();
+    diff.normalize();
+    len *= 0.6f;
+    diff.scale(len);
+    mCam->mCameraLookPos.add(diff);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoChaseSplCam", 46);
+}
 
 void KartDemoCam::InitFixPalaCam() {
-    // void CrsData::Camera::getTargetPos2(JGeometry::TVec3<float> *) const {}
-    // void CrsData::Camera::getTargetPos(JGeometry::TVec3<float> *) const {}
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    Mtx local5;
+    Mtx local6;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+
+    if (mCam->mTargetBody->mCarStatus & 0x100000) {
+        mPosMtx[0][0] = 1.0f;
+        mPosMtx[1][0] = 0.0f;
+        mPosMtx[2][0] = 0.0f;
+
+        mPosMtx[0][1] = 0.0f;
+        mPosMtx[1][1] = 1.0f;
+        mPosMtx[2][1] = 0.0f;
+
+        mPosMtx[0][2] = 0.0f;
+        mPosMtx[1][2] = 0.0f;
+        mPosMtx[2][2] = 1.0f;
+
+        mPosMtx[0][3] = mCam->mTargetBody->_110[0][3];
+        mPosMtx[1][3] = mCam->mTargetBody->_110[1][3];
+        mPosMtx[2][3] = mCam->mTargetBody->_110[2][3];
+    } else {
+        PSMTXCopy(mCam->mTargetBody->_110, mPosMtx);
+    }
+
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&local4);
+    mCam->mCameraLookPos.set(mBody->mPos);
+    mCam->mCameraLookPos.y += 30.0f;
+    if (mCam->mTargetBody->mIdx == 0x10) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 0x11) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 0xd) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 5) {
+        mCam->mCameraLookPos.y += 40.0f;
+    }
+
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mCam->mTargetBody->_110, local5, local5);
+    mCam->mCameraPos.x = local5[0][2] * local4.z + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = local5[1][2] * local4.z + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = local5[2][2] * local4.z + mCam->mCameraLookPos.z;
+
+    cam->getTargetPos2(&local4);
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mCam->mTargetBody->_110, local5, local5);
+    local4.z = 100.0f;
+    mCam->mCameraLookPos.x = local5[0][2] * local4.z + mCam->mCameraPos.x;
+    mCam->mCameraLookPos.y = local5[1][2] * local4.z + mCam->mCameraPos.y;
+    mCam->mCameraLookPos.z = local5[2][2] * local4.z + mCam->mCameraPos.z;
+
+    DoInitCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixPalaCam", 47);
 }
 
-void KartDemoCam::DoFixPalaCam() {}
+void KartDemoCam::DoFixPalaCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    Mtx localMtx;
+    Mtx local5;
+    Mtx local6;
 
-void KartDemoCam::InitDemoPathCam() {}
+    if (mCam->mTargetBody->mCarStatus & 0x100000) {
+        PSMTXCopy(mPosMtx, localMtx);
+    } else {
+        PSMTXCopy(mBody->_110, mPosMtx);
+        PSMTXCopy(mBody->_110, localMtx);
+    }
 
-void KartDemoCam::DoDemoPathCam() {}
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getTargetPos(&local4);
+    mCam->mCameraLookPos.set(mBody->mPos);
+    mCam->mCameraLookPos.y += 30.0f;
+    if (mCam->mTargetBody->mIdx == 0x10) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 0x11) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 0xd) {
+        mCam->mCameraLookPos.y += 40.0f;
+    } else if (mCam->mTargetBody->mIdx == 5) {
+        mCam->mCameraLookPos.y += 40.0f;
+    }
 
-void KartDemoCam::InitDemoParallelView() {}
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(localMtx, local5, local5);
+    mCam->mCameraPos.x = local5[0][2] * local4.z + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = local5[1][2] * local4.z + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = local5[2][2] * local4.z + mCam->mCameraLookPos.z;
 
-void KartDemoCam::DemoParallelView() {}
+    cam->getTargetPos2(&local4);
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(localMtx, local5, local5);
+    local4.z = 100.0f;
+    mCam->mCameraLookPos.x = local5[0][2] * local4.z + mCam->mCameraPos.x;
+    mCam->mCameraLookPos.y = local5[1][2] * local4.z + mCam->mCameraPos.y;
+    mCam->mCameraLookPos.z = local5[2][2] * local4.z + mCam->mCameraPos.z;
 
-void KartDemoCam::InitDemoGoalView() {}
+    DoCol();
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixPalaCam", 48);
+}
 
-void KartDemoCam::DemoGoalView() {}
+void KartDemoCam::InitDemoPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+    *(u16*)&_3a[2] = 0;
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitDemoPathCam", 49);
+}
 
-void KartDemoCam::MapView() {}
+void KartDemoCam::DoDemoPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mCam->mCurCamIdx);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    f32 scale = 0.0005f * (f32)cam->getPathSpeed();
+    scale *= local3.length();
+    local3.normalize();
+    local3.scale(scale);
+    mCam->mCameraPos.add(local3);
+    cam->getTargetPos2(&local3);
+    local3.sub(local3, mCam->mCameraLookPos);
+    f32 scale2 = 0.01f * local3.length();
+    local3.normalize();
+    local3.scale(scale2);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoDemoPathCam", 50);
+}
 
-void KartDemoCam::ObjectView() {}
+void KartDemoCam::InitDemoParallelView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    mCam->SetFovy(viewdata[mCam->mPtr].fovY);
+    local.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->mCameraLookPos.sub(local, mBody->_350);
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.348888f, 0.0f);
+    local2.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitDemoParallelView", 51);
+}
+
+void KartDemoCam::DemoParallelView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    mCam->SetFovy(viewdata[mCam->mPtr].fovY);
+    local.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3], mBody->mPlayerPosMtx[2][3]);
+    mCam->mCameraLookPos.sub(local, mBody->_350);
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 500.0f, 0.348888f, 0.0f);
+    local2.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DemoParallelView", 52);
+}
+
+void KartDemoCam::InitDemoGoalView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    Mtx local5;
+    Mtx local6;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+
+    if (crsData->searchCameraID(0x70617261) == -1) {
+        InitDemoParallelView();
+        return;
+    }
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(crsData->searchCameraID(0x70617261));
+
+    if (mCam->mTargetBody->mCarStatus & 0x100000) {
+        mPosMtx[0][0] = 1.0f;
+        mPosMtx[1][0] = 0.0f;
+        mPosMtx[2][0] = 0.0f;
+
+        mPosMtx[0][1] = 0.0f;
+        mPosMtx[1][1] = 1.0f;
+        mPosMtx[2][1] = 0.0f;
+
+        mPosMtx[0][2] = 0.0f;
+        mPosMtx[1][2] = 0.0f;
+        mPosMtx[2][2] = 1.0f;
+
+        mPosMtx[0][3] = mCam->mTargetBody->_110[0][3];
+        mPosMtx[1][3] = mCam->mTargetBody->_110[1][3];
+        mPosMtx[2][3] = mCam->mTargetBody->_110[2][3];
+    } else {
+        PSMTXCopy(mCam->mTargetBody->_110, mPosMtx);
+    }
+
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&local4);
+    mCam->mCameraLookPos.set(mBody->mPos);
+    mCam->mCameraLookPos.y += 30.0f;
+    if (mCam->mTargetBody->getThunder()->mFlags & 1) {
+        if (mCam->mTargetBody->mIdx == 0x10) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0x11) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0xd) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 5) {
+            mCam->mCameraLookPos.y += 40.0f;
+        }
+    }
+
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mPosMtx, local5, local5);
+    mCam->mCameraPos.x = local5[0][2] * local4.z + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = local5[1][2] * local4.z + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = local5[2][2] * local4.z + mCam->mCameraLookPos.z;
+
+    cam->getTargetPos2(&local4);
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(mPosMtx, local5, local5);
+    local4.z = 100.0f;
+    mCam->mCameraLookPos.x = local5[0][2] * local4.z + mCam->mCameraPos.x;
+    mCam->mCameraLookPos.y = local5[1][2] * local4.z + mCam->mCameraPos.y;
+    mCam->mCameraLookPos.z = local5[2][2] * local4.z + mCam->mCameraPos.z;
+
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitDemoGoalView", 53);
+}
+
+void KartDemoCam::DemoGoalView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    Mtx localMtx;
+    Mtx local5;
+    Mtx local6;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+
+    if (crsData->searchCameraID(0x70617261) == -1) {
+        DemoParallelView();
+        return;
+    }
+
+    if (mCam->mTargetBody->mCarStatus & 0x100000) {
+        PSMTXCopy(mPosMtx, localMtx);
+    } else {
+        PSMTXCopy(mBody->_110, mPosMtx);
+        PSMTXCopy(mBody->_110, localMtx);
+    }
+
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(crsData->searchCameraID(0x70617261));
+    ChaseFovy(cam);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getTargetPos(&local4);
+    mCam->mCameraLookPos.set(mBody->mPos);
+    mCam->mCameraLookPos.y += 30.0f;
+    if (mCam->mTargetBody->getThunder()->mFlags & 1) {
+        if (mCam->mTargetBody->mIdx == 0x10) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0x11) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 0xd) {
+            mCam->mCameraLookPos.y += 40.0f;
+        } else if (mCam->mTargetBody->mIdx == 5) {
+            mCam->mCameraLookPos.y += 40.0f;
+        }
+    }
+
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(localMtx, local5, local5);
+    mCam->mCameraPos.x = local5[0][2] * local4.z + mCam->mCameraLookPos.x;
+    mCam->mCameraPos.y = local5[1][2] * local4.z + mCam->mCameraLookPos.y;
+    mCam->mCameraPos.z = local5[2][2] * local4.z + mCam->mCameraLookPos.z;
+
+    cam->getTargetPos2(&local4);
+    GetKartCtrl()->RotYMatrix(local5, (3.141f * local4.x) / 180.0f);
+    GetKartCtrl()->RotXMatrix(local6, (3.141f * local4.y) / 180.0f);
+    PSMTXConcat(local5, local6, local5);
+    PSMTXConcat(localMtx, local5, local5);
+    local4.z = 100.0f;
+    mCam->mCameraLookPos.x = local5[0][2] * local4.z + mCam->mCameraPos.x;
+    mCam->mCameraLookPos.y = local5[1][2] * local4.z + mCam->mCameraPos.y;
+    mCam->mCameraLookPos.z = local5[2][2] * local4.z + mCam->mCameraPos.z;
+
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DemoGoalView", 54);
+}
+
+void KartDemoCam::MapView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    KartGamePad* pad = gpaGamePad[1];
+
+    local.set(0.0f, 1.0f, 0.0f);
+
+    f32 dist = 0.0f;
+    if (pad->testButton(8)) {
+        dist = 50.0f;
+    } else if (pad->testButton(4)) {
+        dist = -50.0f;
+    }
+
+    if (pad->testButton(64)) {
+        *(f32 *)&_48[12] += 0.0523333f;
+    } else if (pad->testButton(32)) {
+        *(f32 *)&_48[12] -= 0.0523333f;
+    }
+
+    f32 angle = *(f32 *)&_48[12];
+
+    *(f32 *)&_48[16] += 0.0872222f * pad->getMainStickY();
+    if (*(f32 *)&_48[16] > 1.395555f) {
+        *(f32 *)&_48[16] = 1.395555f;
+    }
+    if (*(f32 *)&_48[16] < -1.395555f) {
+        *(f32 *)&_48[16] = -1.395555f;
+    }
+
+    if (pad->testButton(256)) {
+        mCam->mFovY += 1.0f;
+    } else if (pad->testButton(512)) {
+        mCam->mFovY -= 1.0f;
+    }
+    if (mCam->mFovY > 180.0f) {
+        mCam->mFovY = 180.0f;
+    }
+    if (mCam->mFovY < 1.0f) {
+        mCam->mFovY = 1.0f;
+    }
+
+    if (pad->testButton(2)) {
+        angle -= 1.57f;
+        dist = 50.0f;
+    } else if (pad->testButton(1)) {
+        angle += 1.57f;
+        dist = 50.0f;
+    }
+
+    if (pad->testButton(2048)) {
+        mCam->mCameraPos.y += 50.0f;
+    } else if (pad->testButton(1024)) {
+        mCam->mCameraPos.y -= 50.0f;
+    }
+
+    GetKartCtrl()->PolarToCross((Vec *)&mCam->mCameraPos, (Vec *)&local2, dist, 0.0f, angle);
+    GetKartCtrl()->PolarToCross((Vec *)&local2, (Vec *)&mCam->mCameraLookPos, 1000.0f, *(f32 *)&_48[16], *(f32 *)&_48[12]);
+    mCam->mCameraPos.set(local2);
+
+    if (pad->testButton(16)) {
+        mCam->mCameraPos.set(9000.0f, 3650.0f, 17000.0f);
+        mCam->mCameraLookPos.set(9728.0f, 3670.0f, 16340.0f);
+        mCam->mFovY = 40.0f;
+        *(f32 *)&_48[16] = 0.0174444f;
+        *(f32 *)&_48[12] = 2.3549921f;
+    }
+
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+
+    if (_3a[1] == 0) {
+        JUTReport(120, 80, "CAMERA");
+        JUTReport(120, 100, "X:%7.1f", mCam->mCameraPos.x);
+        JUTReport(120, 120, "Y:%7.1f", mCam->mCameraPos.y);
+        JUTReport(120, 140, "Z:%7.1f", mCam->mCameraPos.z);
+        JUTReport(290, 80, "LOOK");
+        JUTReport(290, 100, "X:%7.1f", mCam->mCameraLookPos.x);
+        JUTReport(290, 120, "Y:%7.1f", mCam->mCameraLookPos.y);
+        JUTReport(290, 140, "Z:%7.1f", mCam->mCameraLookPos.z);
+        f32 f3 = (180.0f * angle / 3.141f);
+        JUTReport(120, 160, "Y_DIR%7.0f", f3 - 360.0f * (f32)(((int)f3) / 360));
+        JUTReport(120, 180, "X_DIR%7.0f", 180.0f * *(f32 *)&_48[16] / 3.141f);
+        JUTReport(120, 200, "FOVY%7.1f", mCam->mFovY);
+    }
+}
+
+void KartDemoCam::ObjectView() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    KartGamePad* pad = gpaGamePad[1];
+
+    local.set(0.0f, 1.0f, 0.0f);
+
+    if (pad->testButton(64)) {
+        *(f32 *)&_48[4] += 20.0f;
+    }
+    if (pad->testButton(32)) {
+        *(f32 *)&_48[4] -= 20.0f;
+    }
+    if (*(f32 *)&_48[4] > 10000.0f) {
+        *(f32 *)&_48[4] = 10000.0f;
+    }
+    if (*(f32 *)&_48[4] < 50.0f) {
+        *(f32 *)&_48[4] = 50.0f;
+    }
+
+    *(f32 *)&_48[12] += 0.0348888f * pad->getMainStickX();
+    f32 yaw = *(f32 *)&_48[12];
+    *(f32 *)&_48[16] += 0.0348888f * pad->getMainStickY();
+    if (*(f32 *)&_48[16] > 1.395555f) {
+        *(f32 *)&_48[16] = 1.395555f;
+    }
+    if (*(f32 *)&_48[16] < -1.395555f) {
+        *(f32 *)&_48[16] = -1.395555f;
+    }
+
+    GetKartCtrl()->PolarToCross((Vec *)&_8c, (Vec *)&mCam->mCameraPos, *(f32 *)&_48[4], *(f32 *)&_48[16], *(f32 *)&_48[12]);
+    mCam->mCameraLookPos.set(_8c);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+
+    if (_3a[1] == 0) {
+        JUTReport(120, 80, "CAMERA");
+        JUTReport(120, 100, "X:%7.1f", mCam->mCameraPos.x);
+        JUTReport(120, 120, "Y:%7.1f", mCam->mCameraPos.y);
+        JUTReport(120, 140, "Z:%7.1f", mCam->mCameraPos.z);
+        JUTReport(290, 80, "LOOK");
+        JUTReport(290, 100, "X:%7.1f", mCam->mCameraLookPos.x);
+        JUTReport(290, 120, "Y:%7.1f", mCam->mCameraLookPos.y);
+        JUTReport(290, 140, "Z:%7.1f", mCam->mCameraLookPos.z);
+        f32 f3 = (3.141f * yaw / 180.0f);
+        JUTReport(120, 160, "Y_DIR%7.0f", f3 - 360.0f * (f32)(((int)f3) / 360));
+        JUTReport(120, 180, "X_DIR%7.0f", 3.141f * *(f32 *)&_48[16] / 180.0f);
+    }
+}
 
 void KartDemoCam::DemoInitID() {
-    // void CrsData::Camera::getKind() const {}
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getKind() == 0) {
+        InitFixCam();
+    } else if (cam->getKind() == 256) {
+        InitFixSearchCam();
+    } else if (cam->getKind() == 1) {
+        InitFixPathCam();
+    } else if (cam->getKind() == 257) {
+        InitChasePathCam();
+    } else if (cam->getKind() == 2) {
+        InitFixChaseCam();
+    } else if (cam->getKind() == 258) {
+        InitChaseCam();
+    } else if (cam->getKind() == 7) {
+        InitFixPalaCam();
+    } else if (cam->getKind() == 3) {
+        InitFixSplCam();
+    } else if (cam->getKind() == 259) {
+        InitChaseSplCam();
+    } else if (cam->getKind() == 5) {
+        InitDemoPathCam();
+    } else {
+        mCam->InitOutView();
+    }
 }
 
-void KartDemoCam::InitID() {}
+void KartDemoCam::InitID() {
+    if (mCam->mFlags & 0x200) {
+        mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6D696E69);
+        _38 |= 0x80;
+    } else {
+        if (!(mBody->mGameStatus & 0x40) && !(_38 & 0x40)) {
+            mCam->mCurCamIdx = mCam->mArea.getCameraID();
+        }
+    }
+    if (mCam->mFlags & 0x100) {
+        InitDemoParallelView();
+        _38 |= 0x20;
+    } else {
+        if (mBody->mGameStatus & 0x40) {
+            InitDemoGoalView();
+        } else {
+            if (mCam->mCurCamIdx < 0 || (mBody->mCarStatus & 0x400000)) {
+                InitDemoParallelView();
+                _38 |= 0x10;
+            } else {
+                if (RaceMgr::getCurrentManager()->isAwardDemoMode() && RaceMgr::getCurrentManager()->getAwardKartNo() == -1) {
+                    mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6E657874);
+                }
+                RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+                DemoInitID();
+            }
+        }
+    }
+}
 
-void KartDemoCam::DoDemoView() {}
+void KartDemoCam::DoDemoView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (cam->getKind() == 0) {
+        DoFixCam();
+    } else if (cam->getKind() == 256) {
+        DoFixSearchCam();
+    } else if (cam->getKind() == 1) {
+        DoFixPathCam();
+    } else if (cam->getKind() == 257) {
+        DoChasePathCam();
+    } else if (cam->getKind() == 2) {
+        DoFixChaseCam();
+    } else if (cam->getKind() == 258) {
+        DoChaseCam();
+    } else if (cam->getKind() == 7) {
+        DoFixPalaCam();
+    } else if (cam->getKind() == 3) {
+        DoFixSplCam();
+    } else if (cam->getKind() == 259) {
+        DoChaseSplCam();
+    } else if (cam->getKind() == 5) {
+        DoDemoPathCam();
+    } else {
+        mCam->ParallelView();
+    }
+}
 
-void KartDemoCam::LiveViewChange() {}
+void KartDemoCam::LiveViewChange() {
+    if (mCam->mFlags & 0x100) {
+        int numKarts = GetKartCtrl()->GetKartNumber();
+        int i = 0;
+        for (; i < numKarts; i++) {
+            if (RCMGetKartChecker(i)->getRank() == 1) break;
+        }
+        if (i >= numKarts) return;
+        if (i == mCam->GetTargetNum()) return;
+        GETJ2DManager()->setStatus2Kart(mCam->mCamNo, i);
+        mCam->SetTargetNum((u8)i);
+        mCam->SetTarget();
+        mBody = mCam->getBody();
+        InitDemoParallelView();
+        _38 |= 32;
+    }
+}
 
 void KartDemoCam::DemoView() {
-    // void RaceMgr::requestDemoCameraID() const {}
+    if (_38 & 0x80) {
+        mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6D696E69);
+    } else {
+        if (!(_38 & 0x40)) {
+            if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+                mCam->mCurCamIdx = RaceMgr::getManager()->requestDemoCameraID();
+                _38 |= 0x40;
+                InitID();
+                return;
+            }
+        }
+        if (!(mCam->mFlags & 0x100) && (mBody->mGameStatus & 0x40)) {
+            DemoGoalView();
+            return;
+        }
+        if (!(_38 & 0x40)) {
+            mCam->mArea.searchCamera(mBody->mPos);
+            LiveViewChange();
+            if (mCam->mArea.getCameraID() != mCam->mCurCamIdx) {
+                _38 &= ~0x10;
+                InitID();
+                return;
+            }
+        }
+        if (RaceMgr::getCurrentManager()->isAwardDemoMode() && RaceMgr::getCurrentManager()->getAwardKartNo() == -1) {
+            mCam->mCurCamIdx = RaceMgr::getManager()->getCourse()->getCrsData()->searchCameraID(0x6E657874);
+        }
+    }
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mCam->mCurCamIdx);
+    if (mCam->mCurCamIdx < 0 || (_38 & 0x30)) {
+        DemoParallelView();
+    } else {
+        DoDemoView();
+    }
 }
 
-void KartDemoCam::DoPathEnd(JGeometry::TVec3<float> *, float *) {}
+bool KartDemoCam::DoPathEnd(JGeometry::TVec3f* pathPtr, f32* out) {
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    f32 f = 0.0005f * (f32)cam->getPathSpeed();
+    f *= pathPtr->length();
+    if (cam->getTime() != 0) {
+        if (*(u16*)&_3a[2] < 65535) (*(u16*)&_3a[2])++;
+        if (*(u16*)&_3a[2] < cam->getTime()) goto fail;
+        if (_38 & 0x100) { SetMapNextID(); }
+        else if (_38 & 0x200) { if (!SetStaffNextID()) return false; }
+        else { SetNextID(); }
+        return true;
+    } else {
+        if (!(f < 5.0f)) goto fail;
+        if (_38 & 0x100) { SetMapNextID(); }
+        else if (_38 & 0x200) { if (!SetStaffNextID()) return false; }
+        else { SetNextID(); }
+        return true;
+    }
+fail:
+    *out = f;
+    return false;
+}
 
-void KartDemoCam::InitStartFixPathCam() {}
+void KartDemoCam::InitStartFixPathCam() {
+    JGeometry::TVec3f local;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    *(u16*)&_3a[2] = 0;
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::DoStartFixPathCam() {}
+void KartDemoCam::DoStartFixPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::InitStartPathCam() {}
+void KartDemoCam::InitStartPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    *(u16*)&_3a[2] = 0;
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::DoStartPathCam() {}
+void KartDemoCam::DoStartPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraPos.add(local3);
+    cam->getTargetPos2(&local3);
+    local3.sub(local3, mCam->mCameraLookPos);
+    f = 0.01f * local3.length();
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::InitStartLookPathCam() {}
+void KartDemoCam::InitStartLookPathCam() {
+    JGeometry::TVec3f local;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    *(u16*)&_3a[2] = 0;
+    cam->getPosition(&mCam->mCameraPos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getTargetPos(&mCam->mCameraLookPos);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::DoStartLookPathCam() {}
+void KartDemoCam::DoStartLookPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getTargetPos2(&local3);
+    local3.sub(local3, mCam->mCameraLookPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::InitStartOnlyPathCam() {}
+void KartDemoCam::InitStartOnlyPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    *(u16*)&_3a[2] = 0;
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->SetFovy(cam->getFovy());
+    cam->getFrontDirection(&local3);
+    mCam->mCameraLookPos.x = mCam->mCameraPos.x + 10.0f * local3.x;
+    mCam->mCameraLookPos.y = mCam->mCameraPos.y + 10.0f * local3.y;
+    mCam->mCameraLookPos.z = mCam->mCameraPos.z + 10.0f * local3.z;
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::DoStartOnlyPathCam() {}
+void KartDemoCam::DoStartOnlyPathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    f32 f;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local.set(0.0f, 1.0f, 0.0f);
+    local2.set(pointData->pos);
+    local3.sub(local2, mCam->mCameraPos);
+    if (DoPathEnd(&local3, &f)) return;
+    local3.normalize();
+    local3.scale(f);
+    mCam->mCameraPos.add(local3);
+    cam->getFrontDirection(&local4);
+    mCam->mCameraLookPos.x = mCam->mCameraPos.x + 10.0f * local4.x;
+    mCam->mCameraLookPos.y = mCam->mCameraPos.y + 10.0f * local4.y;
+    mCam->mCameraLookPos.z = mCam->mCameraPos.z + 10.0f * local4.z;
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+}
 
-void KartDemoCam::InitStartFixCam() {}
+void KartDemoCam::InitStartFixCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    *(u16*)&_3a[2] = 0;
+    local.set(0.0f, 1.0f, 0.0f);
+    cam->getPosition(&local2);
+    mCam->mCameraPos.set(local2);
+    mCam->mCameraLookPos.set(mCam->mCameraPos);
+    JGeometry::TVec3f local3;
+    cam->getFrontDirection(&local3);
+    mCam->mCameraLookPos.x += 100.0f * local3.x;
+    mCam->mCameraLookPos.y += 100.0f * local3.y;
+    mCam->mCameraLookPos.z += 100.0f * local3.z;
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitFixCam", 31);
+}
 
-void KartDemoCam::DoStartFixCam() {}
+void KartDemoCam::DoStartFixCam() {
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = crsData->getCameraData(mStartId);
+    JGeometry::TVec3f local;
+    local.zero();
+    f32 f = 0.0f;
+    if (DoPathEnd(&local, &f)) return;
+    JGeometry::TVec3f local2;
+    ChaseFovy(cam);
+    local2.set(0.0f, 1.0f, 0.0f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoFixCam", 32);
+}
 
-void KartDemoCam::InitStartChasePathCam() {}
+void KartDemoCam::InitStartChasePathCam() {
+    JGeometry::TVec3f local;
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    crsData->getPathData((u16)cam->getPathID());
+    mCam->mCameraPos.set(crsData->getPointData((u16)cam->getPathID(), 0)->pos);
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->mCameraLookPos.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    mCam->SetFovy(cam->getFovy());
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitChasePathCam", 41);
+}
 
-void KartDemoCam::DoStartChasePathCam() {}
+void KartDemoCam::DoStartChasePathCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    JGeometry::TVec3f local4;
+    JGeometry::TVec3f local5;
+    f32 f;
+    local.set(0.0f, 1.0f, 0.0f);
+    CrsData* crsData = RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    CrsData::PointData* pointData = crsData->getPointData((u16)cam->getPathID(), 1);
+    local2.set(pointData->pos);
+    local5.sub(local2, mCam->mCameraPos);
+    int pathSpeed = cam->getPathSpeed();
+    if (pathSpeed == 0) {
+        pathSpeed = 1;
+    }
+    if (pathSpeed > 100) {
+        pathSpeed = 100;
+    }
+    f = 0.0005f * (f32)pathSpeed * local5.length();
+    local5.normalize();
+    local5.scale(f);
+    if (DoPathEnd(&local5, &f)) return;
+    mCam->mCameraPos.add(local5);
+    local4.set(mBody->mPlayerPosMtx[0][3], mBody->mPlayerPosMtx[1][3] + 30.0f, mBody->mPlayerPosMtx[2][3]);
+    local3.sub(local4, mCam->mCameraLookPos);
+    f = local3.length();
+    local3.normalize();
+    f *= 0.6f;
+    local3.scale(f);
+    mCam->mCameraLookPos.add(local3);
+    ChaseFovy(cam);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("DoChasePathCam", 42);
+}
 
-void KartDemoCam::InitVsLastCam() {}
+void KartDemoCam::InitVsLastCam() {
+    JGeometry::TVec3f local;
+    *(u16 *)&_3a[2] = 0;
+    *(f32 *)&_48[36] = 0.0f;
+    *(u16 *)&_3a[6] = 1;
+    mCamKartDiffLength = 0.0f;
+    *(u16 *)&_3a[4] = 1;
+    local.set(0.0f, 1.0f, 0.0f);
+    mCam->InitOutView();
+    mCam->_18c *= 3.5f;
+    GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("InitVsLastCam", 30);
+}
 
-void KartDemoCam::VsLastCam() {}
+void KartDemoCam::VsLastCam() {
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local3;
+    local.set(0.0f, 1.0f, 0.0f);
+    switch (_3a[0]) {
+        case 1:
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (GETJ2DManager()->getPreRaceWipeType() == 0) {
+                if (*(u16 *)&_3a[2] >= 10) {
+                    _3a[0] = 2;
+                }
+            } else {
+                if (*(u16 *)&_3a[2] >= 3) {
+                    _3a[0] = 2;
+                }
+            }
+            break;
+        case 2:
+            mCam->mPathData[0].set(mCam->mCameraPos);
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (*(u16 *)&_3a[2] >= 5) {
+                _3a[0] = 4;
+            }
+            break;
+        case 3:
+            break;
+        case 4:
+            GetKartCtrl()->ChaseFnumber(&mCam->_18c, mBody->_4e4, 0.03f);
+            GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+            if (RaceMgr::getCurrentManager()->isAbleStart() || (mBody->mCarStatus & 0x8000) != 0 || GetKartCtrl()->GetCarSpeed(mBody->mMynum) >= 0.0348888f) {
+                _38 = 0;
+                mCam->mMode = 0;
+                mCam->OutView();
+            }
+            break;
+        default:
+            break;
+    }
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+    mCam->DegubCamera("VsLastCam", 29);
+}
 
 void KartDemoCam::InitLastCam() {
-    // void TJugem::getPosition() const {}
+    if (RaceMgr::getCurrentManager()->getCameraNumber() != 1) {
+        InitVsLastCam();
+    } else {
+        JGeometry::TVec3f local;
+        *(u16 *)&_3a[2] = 0;
+        *(f32 *)&_48[36] = 0.0f;
+        *(u16 *)&_3a[6] = 1;
+        mCamKartDiffLength = 0.0f;
+        *(u16 *)&_3a[4] = 1;
+        local.set(0.0f, 1.0f, 0.0f);
+        mCam->InitOutView();
+        TJugem *jugem = GetGeoObjMgr()->getJugem(mCam->mCamNo);
+        mCam->_18c *= 0.95f;
+        mCam->_1ac *= 0.15f;
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, mCam->_18c, mCam->_1ac, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+        mCamKartDiff.set(mCam->mCameraPos);
+        _a4.set(mCam->mCameraLookPos);
+        mCam->mCameraLookPos.set(jugem->getPosition());
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraLookPos, 80.0f, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 3.14f);
+        GetKartCtrl()->PolarToCross(&mCam->mCameraLookPos, &mCam->mCameraPos, 200.0f, -0.523333f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 2.09333f);
+        mCam->mPathData[0].set(mCam->mCameraPos);
+        GetKartCtrl()->PolarToCross(&_a4, &mCam->mPathData[1], 1.3f * mCam->mTargetBody->_4e4, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 1.046666f);
+        GetKartCtrl()->PolarToCross(&_a4, &mCam->mPathData[2], mCam->mTargetBody->_4e4, 0.0f, std::atan2f(mCam->mTargetBody->_308.x, mCam->mTargetBody->_308.z) + 1.91888f);
+        mCam->mPathData[3].set(mCamKartDiff);
+        mCam->_1b0 = 0.0f;
+        mCam->_1b4 = 0.0f;
+        mCam->mPathSpline->setAll(mCam->mPathData);
+        C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local, &mCam->mCameraLookPos);
+        mCam->DegubCamera("InitLastCam", 28);
+    }
 }
-void KartDemoCam::LastCam() {}
+void KartDemoCam::LastCam() {
+    if (RaceMgr::getCurrentManager()->getCameraNumber() != 1) {
+        VsLastCam();
+        return;
+    }
+    JGeometry::TVec3f local2;
+    JGeometry::TVec3f local;
+    JGeometry::TVec3f local3;
+    local2.set(0.0f, 1.0f, 0.0f);
+    switch (_3a[0]) {
+        case 1:
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (GETJ2DManager()->getPreRaceWipeType() == 0) {
+                if (*(u16 *)&_3a[2] >= 10) {
+                    _3a[0] = 2;
+                }
+            } else {
+                if (*(u16 *)&_3a[2] >= 3) {
+                    _3a[0] = 2;
+                }
+            }
+            break;
+        case 2:
+            mCam->mPathData[0].set(mCam->mCameraPos);
+            *(u16 *)&_3a[2] = *(u16 *)&_3a[2] + 1;
+            if (*(u16 *)&_3a[2] >= 5) {
+                _3a[0] = 4;
+            }
+            break;
+        case 3:
+            break;
+        case 4: {
+            f32 len;
+            local.sub(_a4, mCam->mCameraLookPos);
+            len = local.length();
+            GetKartCtrl()->ChaseFcnvge((f32 *)&_48[36], (u16 *)&_3a[6], 0.08f, 3200);
+            len *= *(f32 *)&_48[36];
+            local.normalize();
+            mCam->mCameraLookPos.x += local.x * len;
+            mCam->mCameraLookPos.y += local.y * len;
+            mCam->mCameraLookPos.z += local.z * len;
+            mCam->mPathSpline->setAll(mCam->mPathData);
+            mCam->mPathSpline->getBezierPoint(&local3, mCam->_1b0);
+            mCam->mCameraPos.set(local3);
+            GetKartCtrl()->ChaseFcnvge(&mCamKartDiffLength, (u16 *)&_3a[4], 1.0f, 2000);
+            mCam->_1b0 = mCamKartDiffLength;
+            if ((mCam->mTargetBody->mGameStatus & 0x4) != 0) {
+                if (mCam->_1b0 >= 0.9999f && len < 0.01f) {
+                    _3a[0] = 5;
+                    *(u16 *)&_3a[2] = 0;
+                }
+            }
+            break;
+        }
+        case 5: {
+            f32 len;
+            mCam->DoLookChase();
+            f32 angle = 3.141f * mBody->_4e8 / 180.0f;
+            angle += 3.141f * mCam->_180 / 180.0f;
+            GetKartCtrl()->ChaseFnumber(&mCam->_1ac, angle, 0.04f);
+            GetKartCtrl()->ChaseFnumber(&mCam->_18c, mBody->_4e4, 0.02f);
+            KartCam* c = mCam;
+            f32 azimuth = 3.14f + std::atan2f(c->mTargetBody->_308.x, c->mTargetBody->_308.z);
+            GetKartCtrl()->PolarToCross(&c->mCameraLookPos, &_74, c->_18c, c->_1ac, azimuth);
+            local.sub(_74, mCam->mCameraPos);
+            len = local.length();
+            local.normalize();
+            mCam->mCameraPos.x += local.x * len;
+            mCam->mCameraPos.y += local.y * len;
+            mCam->mCameraPos.z += local.z * len;
+            local.sub(mCam->mCameraLookPos, mCam->mCameraPos);
+            local.normalize();
+            local.scale(mCam->_18c);
+            mCam->mCameraPos.sub(mCam->mCameraLookPos, local);
+            mCam->_200.set(mCam->mCameraPos.x, mCam->mCameraPos.y, mCam->mCameraPos.z);
+            if ((mBody->mCarStatus & 0x8000) != 0 || mCam->_1ac >= angle - 0.01f || GetKartCtrl()->GetCarSpeed(mBody->mMynum) >= 5.0f) {
+                _38 = 0;
+                mCam->mMode = 0;
+                mCam->OutView();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    C_MTXLookAt(mCam->mMtx, &mCam->mCameraPos, &local2, &mCam->mCameraLookPos);
+    mCam->DegubCamera("LastCam", 27);
+}
 
-void KartDemoCam::InitStartDemoCam() {}
+void KartDemoCam::InitStartDemoCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    cam->getKind();
+    switch (cam->getKind()) {
+        case 4:
+            InitStartFixPathCam();
+            mCam->DegubCamera("InitStartFixPathCam", 19);
+            break;
+        case 5:
+            InitStartPathCam();
+            mCam->DegubCamera("InitStartPathCam", 20);
+            break;
+        case 6:
+            InitStartLookPathCam();
+            mCam->DegubCamera("InitStartLookPathCam", 21);
+            break;
+        case 1:
+            InitStartOnlyPathCam();
+            mCam->DegubCamera("InitStartOnlyPathCam", 22);
+            break;
+    }
+}
 
-void KartDemoCam::StartDemoCam() {}
+void KartDemoCam::InitStartMapCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    cam->getKind();
+    switch (cam->getKind()) {
+        case 4:
+            InitStartFixPathCam();
+            mCam->DegubCamera("InitStartFixPathCam", 11);
+            break;
+        case 5:
+            InitStartPathCam();
+            mCam->DegubCamera("InitStartPathCam", 12);
+            break;
+        case 6:
+            InitStartLookPathCam();
+            mCam->DegubCamera("InitStartLookPathCam", 13);
+            break;
+        case 1:
+            InitStartOnlyPathCam();
+            mCam->DegubCamera("InitStartOnlyPathCam", 14);
+            break;
+    }
+}
 
-void KartDemoCam::SetLastDemo() {}
+void KartDemoCam::StartDemoCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (_38 & 4) {
+        LastCam();
+        return;
+    }
+    switch (cam->getKind()) {
+        case 4:
+            DoStartFixPathCam();
+            mCam->DegubCamera("DoStartFixPathCam", 23);
+            break;
+        case 5:
+            DoStartPathCam();
+            mCam->DegubCamera("DoStartPathCam", 24);
+            break;
+        case 6:
+            DoStartLookPathCam();
+            mCam->DegubCamera("DoStartLookPathCam", 25);
+            break;
+        case 1:
+            DoStartOnlyPathCam();
+            mCam->DegubCamera("DoStartOnlyPathCam", 26);
+            break;
+    }
+}
 
-void KartDemoCam::SetRaceCam() {}
+void KartDemoCam::SetLastDemo() {
+    _38 |= 4;
+    *(u16*)&_3a[2] = 0;
+    _3a[0] = 1;
+    if (mCam->mCamNo == 0) {
+        mCam->mCtrl->mBitfield |= 2;
+    }
+    InitLastCam();
+}
 
-void KartDemoCam::SetNextID() {}
+void KartDemoCam::SetRaceCam() {
+    _38 = 0;
+    mCam->mMode = 0;
+    mCam->InitOutView();
+    if (mCam->mCamNo == 0) {
+        mCam->mCtrl->mBitfield |= 2;
+    }
+}
 
-void KartDemoCam::DoExecution() {}
+void KartDemoCam::SetNextID() {
+    RaceMgr::getManager()->getCourse()->getCrsData();
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId)->getNextCameraID();
+    if (mStartId >= 0) {
+        InitStartDemoCam();
+    } else {
+        if (!(_38 & 0xC)) {
+            GETJ2DManager()->startPreRace();
+        }
+        _38 |= 4;
+        _3a[0] = 0;
+    }
+}
 
-u8 KartDemoCam::GetStartID() {}
+void KartDemoCam::DoExecution() {
+    if (_38 & 1) {
+        if (_38 & 4) {
+            SetRaceCam();
+        } else {
+            if (!(_38 & 8)) {
+                GETJ2DManager()->startPreRace();
+            }
+            _38 |= 8;
+        }
+    }
+}
 
-void KartDemoCam::InitStartID(bool) {}
+bool KartDemoCam::GetStartID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
+    if (mCam->mMode == 2) return 1;
+    return mStartId != -1;
+}
 
-void KartDemoCam::StartDemoView() {}
+void KartDemoCam::InitStartID(bool last) {
+    _38 = 1;
+    if (last) {
+        SetLastDemo();
+    } else {
+        InitStartDemoCam();
+    }
+}
 
-void KartDemoCam::InitStartMapCam() {}
+void KartDemoCam::StartDemoView() {
+    StartDemoCam();
+}
 
-void KartDemoCam::StartMapCam() {}
+void KartDemoCam::StartMapCam() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    switch (cam->getKind()) {
+        case 4:
+            DoStartFixPathCam();
+            mCam->DegubCamera("DoStartFixPathCam", 15);
+            break;
+        case 5:
+            DoStartPathCam();
+            mCam->DegubCamera("DoStartPathCam", 16);
+            break;
+        case 6:
+            DoStartLookPathCam();
+            mCam->DegubCamera("DoStartLookPathCam", 17);
+            break;
+        case 1:
+            DoStartOnlyPathCam();
+            mCam->DegubCamera("DoStartOnlyPathCam", 18);
+            break;
+    }
+}
 
-void KartDemoCam::SetMapNextID() {}
+void KartDemoCam::SetMapNextID() {
+    CrsData* cd = RaceMgr::getManager()->getCourse()->getCrsData();
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId)->getNextCameraID();
+    if (mStartId < 0) {
+        mStartId = cd->getStartLoserCameraID();
+    }
+    InitStartMapCam();
+}
 
-void KartDemoCam::SetUpMapID() {}
+void KartDemoCam::SetUpMapID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartLoserCameraID();
+    if (mStartId >= 0) {
+        InitStartMapCam();
+        _38 |= 0x100;
+    }
+}
 
-void KartDemoCam::InitStaffView() {}
+void KartDemoCam::InitStaffView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    cam->getKind();
+    switch (cam->getKind()) {
+        case 0:
+            InitStartFixCam();
+            break;
+        case 4:
+            InitStartFixPathCam();
+            mCam->DegubCamera("InitStartFixPathCam", 11);
+            break;
+        case 5:
+            InitStartPathCam();
+            mCam->DegubCamera("InitStartPathCam", 12);
+            break;
+        case 6:
+            InitStartLookPathCam();
+            mCam->DegubCamera("InitStartLookPathCam", 13);
+            break;
+        case 1:
+            InitStartOnlyPathCam();
+            mCam->DegubCamera("InitStartOnlyPathCam", 14);
+            break;
+        case 257:
+            InitStartChasePathCam();
+            break;
+    }
+}
 
-void KartDemoCam::StaffView() {}
+void KartDemoCam::StaffView() {
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (!(_38 & 0x400)) {
+        if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+            mStartId = RaceMgr::getManager()->requestDemoCameraID();
+            _38 |= 0x400;
+            InitStaffView();
+            return;
+        }
+    }
+    if (RaceMgr::getCurrentManager()->requestDemoCameraID() >= 0) {
+        cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    }
+    switch (cam->getKind()) {
+        case 0:
+            DoStartFixCam();
+            break;
+        case 4:
+            DoStartFixPathCam();
+            mCam->DegubCamera("DoStartFixPathCam", 15);
+            break;
+        case 5:
+            DoStartPathCam();
+            mCam->DegubCamera("DoStartPathCam", 16);
+            break;
+        case 6:
+            DoStartLookPathCam();
+            mCam->DegubCamera("DoStartLookPathCam", 17);
+            break;
+        case 1:
+            DoStartOnlyPathCam();
+            mCam->DegubCamera("DoStartOnlyPathCam", 18);
+            break;
+        case 257:
+            DoStartChasePathCam();
+            break;
+    }
+}
 
-void KartDemoCam::SetStaffNextID() {}
+bool KartDemoCam::SetStaffNextID() {
+    RaceMgr::getManager()->getCourse()->getCrsData();
+    CrsData::Camera* cam = RaceMgr::getManager()->getCourse()->getCrsData()->getCameraData(mStartId);
+    if (cam->getNextCameraID() < 0) {
+        return 0;
+    }
+    mStartId = cam->getNextCameraID();
+    InitStaffView();
+    return 1;
+}
 
-void KartDemoCam::SetUpStaffID() {}
+void KartDemoCam::SetUpStaffID() {
+    mStartId = RaceMgr::getManager()->getCourse()->getCrsData()->getStartCameraID();
+    _38 |= 0x200;
+}
+
+void CrsData::Camera::getTargetPos(JGeometry::TVec3f *out) const {
+    out->set(mTargetPos);
+}
+
+void CrsData::Camera::getTargetPos2(JGeometry::TVec3f *out) const {
+    out->set(mTargetPos2);
+}
