@@ -328,7 +328,7 @@ namespace JGeometry {
         void scaleAdd(f32 scalar, const TVec3 &operand) { JMAVECScaleAdd(&operand, this, this, scalar); }
 
         void div(f32 divisor) { scale(TUtilf::invert(divisor)); }
-        void div(f32 divisor, const TVec3 &operand) { scale(TUtilf::invert(divisor), operand); }
+        void div(f32 divisor, const TVec3 &operand);
 
         f32 squared() const { return JMathInlineVEC::PSVECSquareMag(this); }
         f32 squaredZX() const { return dotZX(*this); }
@@ -384,6 +384,13 @@ namespace JGeometry {
             return invsqrt * sq;
         }
     };
+
+#pragma push
+#pragma optimize_for_size off
+inline void TVec3<f32>::div(f32 divisor, const TVec3 &operand) {
+    scale(TUtilf::invert(divisor), operand);
+}
+#pragma pop
 
     template < typename T >
     class TVec4 : public Quaternion {
