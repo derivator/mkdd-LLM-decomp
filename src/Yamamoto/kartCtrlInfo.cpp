@@ -660,7 +660,7 @@ bool KartCtrl::IsWallReact(int kartIndex) {
     KartBody *kartBody = getKartBody(kartIndex);
     KartTumble *kartTumble = kartBody->getTumble();
     
-    if ((kartTumble->_4[0] & 1) != 0) {
+    if ((kartTumble->mFlags & 1) != 0) {
         return true;
     }
     else {

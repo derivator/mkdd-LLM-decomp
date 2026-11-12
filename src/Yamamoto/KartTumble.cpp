@@ -13,37 +13,37 @@
 
 void KartTumble::Init(int index) {
     mBody = GetKartCtrl()->getKartBody(index);
-    _4[0] = 0;
-    _4[1] = 0;
-    *(u16*)&_14[0] = 0;
-    _8.zero();
+    mFlags = 0;
+    mUnk5 = 0;
+    mTimer = 0;
+    mDir.zero();
 }
 
 void KartTumble::MakeWanWanTumble(ItemObj *itemObj) {
     KartBody* body = mBody;
     ItemObjMgr* mgr = GetItemObjMgr();
     ItemObjMgr::KartHitList* hitList = mgr->getKartHitList(body->mMynum);
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f itemPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
-                hitList->mObjects[9]->getPos(&v3);
+                mUnk5 = 0;
+                hitList->mObjects[9]->getPos(&itemPos);
                 body->getGame()->ItemWatchMan(itemObj);
-                v3.y = body->mPos.y;
-                v1.sub(v3, body->mPos);
-                v1.length();
-                body->_308.angle(v1);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                itemPos.y = body->mPos.y;
+                force.sub(itemPos, body->mPos);
+                force.length();
+                body->_308.angle(force);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -56,14 +56,14 @@ void KartTumble::MakeWanWanTumble(ItemObj *itemObj) {
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v2.normalize();
-                v1.set(v2);
-                v1.y = 0.0f;
-                v1.scale(80.0f);
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 60;
+                dir.normalize();
+                force.set(dir);
+                force.y = 0.0f;
+                force.scale(80.0f);
+                force.scale(body->_3a4);
+                body->DoForce(&body->mPos, &force);
+                mFlags |= 1;
+                mTimer = 60;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashVoice();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
@@ -80,26 +80,26 @@ void KartTumble::MakeKameTumble(ItemObj *itemObj) {
     KartBody* body = mBody;
     ItemObjMgr* mgr = GetItemObjMgr();
     ItemObjMgr::KartHitList* hitList = mgr->getKartHitList(body->mMynum);
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f itemPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
-                hitList->mObjects[11]->getPos(&v3);
-                v3.y = body->mPos.y;
-                v1.sub(v3, body->mPos);
-                v1.length();
-                body->_308.angle(v1);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                mUnk5 = 0;
+                hitList->mObjects[11]->getPos(&itemPos);
+                itemPos.y = body->mPos.y;
+                force.sub(itemPos, body->mPos);
+                force.length();
+                body->_308.angle(force);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -111,14 +111,14 @@ void KartTumble::MakeKameTumble(ItemObj *itemObj) {
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v2.normalize();
-                v1.set(v2);
-                v1.y = 0.0f;
-                v1.scale(80.0f);
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 60;
+                dir.normalize();
+                force.set(dir);
+                force.y = 0.0f;
+                force.scale(80.0f);
+                force.scale(body->_3a4);
+                body->DoForce(&body->mPos, &force);
+                mFlags |= 1;
+                mTimer = 60;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
                 body->getStrat()->DoMotor(MotorManager::MotorType_11);
@@ -134,24 +134,24 @@ void KartTumble::MakeKameTumble(ItemObj *itemObj) {
 
 void KartTumble::MakeStarTumble() {
     KartBody* body = mBody;
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f otherKartPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
-                v3.set(((KartBody*)body->mUnkSub10c)->mPos);
-                v3.y = body->mPos.y;
-                v1.sub(v3, body->mPos);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                mUnk5 = 0;
+                otherKartPos.set(((KartBody*)body->mUnkSub10c)->mPos);
+                otherKartPos.y = body->mPos.y;
+                force.sub(otherKartPos, body->mPos);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -164,14 +164,14 @@ void KartTumble::MakeStarTumble() {
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v2.normalize();
-                v1.set(v2);
-                v1.y = 0.0f;
-                v1.scale(80.0f);
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 60;
+                dir.normalize();
+                force.set(dir);
+                force.y = 0.0f;
+                force.scale(80.0f);
+                force.scale(body->_3a4);
+                body->DoForce(&body->mPos, &force);
+                mFlags |= 1;
+                mTimer = 60;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashVoice();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
@@ -186,50 +186,50 @@ void KartTumble::MakeStarTumble() {
 
 void KartTumble::MakeDashTumble() {
     KartBody* body = mBody;
-    JGeometry::TVec3f v1;
-    JGeometry::TVec3f v2;
-    JGeometry::TVec3f v3;
-    v3.set(((KartBody*)body->mUnkSub10c)->mPrevPos);
-    v1.sub(v3, body->mPrevPos);
-    v2.sub(body->_308, ((KartBody*)body->mUnkSub10c)->_308);
-    f32 ang = v2.angle(v1);
-    if (!((180.0f * ang) / 3.141f < 90.0f)) {
-        v1.normalize();
-        v1.y = 0.0f;
-        v1.scale(500.0f);
-        v1.scale(body->_3a4);
-        body->DoForce(&body->mPos, &v1);
+    JGeometry::TVec3f force;
+    JGeometry::TVec3f angleDiff;
+    JGeometry::TVec3f otherPrevPos;
+    otherPrevPos.set(((KartBody*)body->mUnkSub10c)->mPrevPos);
+    force.sub(otherPrevPos, body->mPrevPos);
+    angleDiff.sub(body->_308, ((KartBody*)body->mUnkSub10c)->_308);
+    f32 angle = angleDiff.angle(force);
+    if (!((180.0f * angle) / 3.141f < 90.0f)) {
+        force.normalize();
+        force.y = 0.0f;
+        force.scale(500.0f);
+        force.scale(body->_3a4);
+        body->DoForce(&body->mPos, &force);
     }
 }
 
 void KartTumble::DoTumble() {
     KartBody* body = mBody;
     GeographyObj* obj = GetGeoObjMgr()->getKartReactHitObjectList(body->mMynum)[11];
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     if (obj == 0) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
-                JGeometry::TVec3f v4;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f hitNormal;
+                JGeometry::TVec3f objPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
-                obj->getPosition(&v4);
+                mUnk5 = 0;
+                obj->getPosition(&objPos);
                 obj->getColScaleRadius();
                 GetGeoObjMgr()->getKartHitDepthNormalObj(body->mMynum);
-                v3.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
-                obj->getVelocity(&v2);
-                v2.y = 0.0f;
-                v4.y = body->mPos.y;
-                v1.sub(v4, body->mPos);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                hitNormal.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
+                obj->getVelocity(&dir);
+                dir.y = 0.0f;
+                objPos.y = body->mPos.y;
+                force.sub(objPos, body->mPos);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -238,18 +238,18 @@ void KartTumble::DoTumble() {
                 body->getGame()->MakeClear();
                 body->getDamage()->SetBigDamageAnime();
                 body->getItem()->FallItem();
-                body->ObjectReflection(&v3);
+                body->ObjectReflection(&hitNormal);
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v2.normalize();
-                v1.set(v2);
-                v1.y = 0.0f;
-                v1.scale(80.0f);
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 300;
+                dir.normalize();
+                force.set(dir);
+                force.y = 0.0f;
+                force.scale(80.0f);
+                force.scale(body->_3a4);
+                body->DoForce(&body->mPos, &force);
+                mFlags |= 1;
+                mTimer = 300;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashVoice();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
@@ -265,28 +265,28 @@ void KartTumble::DoTumble() {
 void KartTumble::DoPakunTumble() {
     KartBody* body = mBody;
     GeographyObj* obj = GetGeoObjMgr()->getKartReactHitObjectList(body->mMynum)[18];
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     if (obj == 0) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
-                JGeometry::TVec3f v4;
+                JGeometry::TVec3f throwDir;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f hitNormal;
+                JGeometry::TVec3f objPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
+                mUnk5 = 0;
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown6, body->mMynum, body->mPos, false);
-                obj->getPosition(&v4);
+                obj->getPosition(&objPos);
                 obj->getColScaleRadius();
                 GetGeoObjMgr()->getKartHitDepthNormalObj(body->mMynum);
-                v3.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
-                obj->getKartThrowDirPow(&v1, 0, body->mMynum);
-                v2.set(v1);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                v2.normalize();
+                hitNormal.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
+                obj->getKartThrowDirPow(&throwDir, 0, body->mMynum);
+                dir.set(throwDir);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                dir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -298,12 +298,12 @@ void KartTumble::DoPakunTumble() {
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v1.y = 0.0f;
-                v1.normalize();
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 120;
+                throwDir.y = 0.0f;
+                throwDir.normalize();
+                throwDir.scale(body->_3a4);
+                body->DoForce(&body->mPos, &throwDir);
+                mFlags |= 1;
+                mTimer = 120;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashVoice();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
@@ -319,32 +319,32 @@ void KartTumble::DoPakunTumble() {
 void KartTumble::DoHanaTumble() {
     KartBody* body = mBody;
     GeographyObj* obj = GetGeoObjMgr()->getKartReactHitObjectList(body->mMynum)[15];
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     if (obj == 0) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
-                JGeometry::TVec3f v4;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f hitNormal;
+                JGeometry::TVec3f objPos;
                 body->_584 = 4;
                 body->_588 = 0;
-                _4[1] = 0;
+                mUnk5 = 0;
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown6, body->mMynum, body->mPos, false);
-                obj->getPosition(&v4);
+                obj->getPosition(&objPos);
                 obj->getColScaleRadius();
                 GetGeoObjMgr()->getKartHitDepthNormalObj(body->mMynum);
-                v3.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
-                obj->getVelocity(&v2);
-                v2.y = 0.0f;
-                v4.y = body->mPos.y;
-                v1.sub(v4, body->mPos);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                hitNormal.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
+                obj->getVelocity(&dir);
+                dir.y = 0.0f;
+                objPos.y = body->mPos.y;
+                force.sub(objPos, body->mPos);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.680333f;
@@ -353,18 +353,18 @@ void KartTumble::DoHanaTumble() {
                 body->getGame()->MakeClear();
                 body->getDamage()->SetBigDamageAnime();
                 body->getItem()->FallItem();
-                body->ObjectReflection(&v3);
+                body->ObjectReflection(&hitNormal);
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                v2.normalize();
-                v1.set(v2);
-                v1.y = 0.0f;
-                v1.scale(80.0f);
-                v1.scale(body->_3a4);
-                body->DoForce(&body->mPos, &v1);
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 120;
+                dir.normalize();
+                force.set(dir);
+                force.y = 0.0f;
+                force.scale(80.0f);
+                force.scale(body->_3a4);
+                body->DoForce(&body->mPos, &force);
+                mFlags |= 1;
+                mTimer = 120;
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashStartSound();
                 GetKartCtrl()->getKartSound(body->mMynum)->DoRollCrashVoice();
                 JPEffectPerformer::setEffect(JPEffectPerformer::Effect_Unknown0, body->mMynum, body->mPos, true);
@@ -380,33 +380,33 @@ void KartTumble::DoHanaTumble() {
 void KartTumble::MakePoiHanaTumble() {
     KartBody* body = mBody;
     TKartThrower* obj = (TKartThrower*)GetGeoObjMgr()->getKartReactHitObjectList(body->mMynum)[14];
-    if (_4[0] & 1) return;
+    if (mFlags & 1) return;
     if (obj == 0) return;
     switch (body->getChecker()->CheckCrash()) {
         case 0:
             {
-                JGeometry::TVec3f v1;
-                JGeometry::TVec3f v2;
-                JGeometry::TVec3f v3;
-                JGeometry::TVec3f v4;
+                JGeometry::TVec3f force;
+                JGeometry::TVec3f dir;
+                JGeometry::TVec3f hitNormal;
+                JGeometry::TVec3f objPos;
                 body->_584 = 13;
                 body->_588 = 0;
-                _4[1] = 0;
-                obj->getPosition(&v4);
+                mUnk5 = 0;
+                obj->getPosition(&objPos);
                 obj->getColScaleRadius();
                 GetGeoObjMgr()->getKartHitDepthNormalObj(body->mMynum);
-                v3.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
-                obj->getVelocity(&v2);
-                v2.y = 0.0f;
-                v4.y = body->mPos.y;
-                v1.sub(v4, body->mPos);
-                v1.length();
-                body->_308.angle(v1);
-                v2.set(v1);
-                v2.scale(-1.0f);
-                GetKartCtrl()->DevMatrixByVector(&_8, &v2, body->_110);
-                _8.y = 0.0f;
-                _8.normalize();
+                hitNormal.set(*GetGeoObjMgr()->getKartHitRefVecNormalObj(body->mMynum));
+                obj->getVelocity(&dir);
+                dir.y = 0.0f;
+                objPos.y = body->mPos.y;
+                force.sub(objPos, body->mPos);
+                force.length();
+                body->_308.angle(force);
+                dir.set(force);
+                dir.scale(-1.0f);
+                GetKartCtrl()->DevMatrixByVector(&mDir, &dir, body->_110);
+                mDir.y = 0.0f;
+                mDir.normalize();
                 body->_594 = 0;
                 body->_4b4 = 0.0f;
                 body->_4bc = 0.191888f;
@@ -418,17 +418,17 @@ void KartTumble::MakePoiHanaTumble() {
                 body->mVel.zero();
                 body->_2cc.zero();
                 body->mWg.zero();
-                JGeometry::TVec3f v5;
-                f32 fVar = (f32)obj->getThrowPow();
-                f32 five = 5.0f;
-                fVar = fVar * five;
-                fVar = fVar * body->_3a4;
-                obj->getThrowDir(&v5, body->mMynum);
-                body->_2cc.x += fVar * v5.x;
-                body->_2cc.y += fVar * v5.y;
-                body->_2cc.z += fVar * v5.z;
-                _4[0] |= 1;
-                *(u16*)&_14[0] = 120;
+                JGeometry::TVec3f throwDir;
+                f32 throwPow = (f32)obj->getThrowPow();
+                f32 forceScale = 5.0f;
+                throwPow = throwPow * forceScale;
+                throwPow = throwPow * body->_3a4;
+                obj->getThrowDir(&throwDir, body->mMynum);
+                body->_2cc.x += throwPow * throwDir.x;
+                body->_2cc.y += throwPow * throwDir.y;
+                body->_2cc.z += throwPow * throwDir.z;
+                mFlags |= 1;
+                mTimer = 120;
                 if (obj->getKind() == 3402) {
                     GetKartCtrl()->getKartSound(body->mMynum)->DoShootSound();
                 }
@@ -459,14 +459,14 @@ void KartTumble::DoShootCrashCrl() {
                 body->_588 = 1;
             }
             GetKartCtrl()->ChaseFnumber(&body->_4b4, body->_4bc, 0.8f);
-            if (!((s64)(s32)_4[0] & 0x400)) {
+            if (!((s64)(s32)mFlags & 0x400)) {
                 if (body->_594 < 10) {
                     body->mVel.y += 10.0f;
                 }
                 if (body->_594 <= 20) {
                     body->mWg.scale(0.4f);
-                    body->mWg.x += body->_4b4 * _8.z;
-                    body->mWg.z += body->_4b4 * (-_8.x);
+                    body->mWg.x += body->_4b4 * mDir.z;
+                    body->mWg.z += body->_4b4 * (-mDir.x);
                 }
             }
             break;
@@ -474,10 +474,10 @@ void KartTumble::DoShootCrashCrl() {
 }
 
 void KartTumble::DoTumbleCrl() {
-    if (*(u16*)&_14[0] != 0) {
-        (*(u16*)&_14[0])--;
+    if (mTimer != 0) {
+        (mTimer)--;
     } else {
-        _4[0] &= 0xFE;
+        mFlags &= 0xFE;
     }
 }
 
@@ -497,11 +497,11 @@ void KartTumble::DoAfterTumbleCrl() {
                 body->_588 = 1;
             }
             GetKartCtrl()->ChaseFnumber(&body->_4b4, body->_4bc, 0.8f);
-            if (!((s64)(s32)_4[0] & 0x400)) {
+            if (!((s64)(s32)mFlags & 0x400)) {
                 if (body->_594 <= 20) {
                     body->mWg.scale(0.4f);
-                    body->mWg.x += body->_4b4 * _8.z;
-                    body->mWg.z += body->_4b4 * (-_8.x);
+                    body->mWg.x += body->_4b4 * mDir.z;
+                    body->mWg.z += body->_4b4 * (-mDir.x);
                 }
             }
             break;

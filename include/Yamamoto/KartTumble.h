@@ -25,11 +25,14 @@ public:
     void DoShootCrashCrl();           // 0x80305bd0
     void DoTumbleCrl();               // 0x80305d3c
     void DoAfterTumbleCrl();          // 0x80305d64
-    KartBody *mBody;        //
-    u8 _4[0x8 - 0x4];       //
+    KartBody *mBody;        // 0x00
+    u8 mFlags;              // 0x04, bit 0: tumble active
+    u8 mUnk5;               // 0x05
+    u8 mUnk6[2];            // 0x06
 private:
-    JGeometry::TVec3f _8; //
-    u8 _14[0x18 - 0x14];  //
-};                        // 18
+    JGeometry::TVec3f mDir; // 0x08
+    u16 mTimer;             // 0x14
+    u16 mUnk16;             // 0x16
+};                          // 0x18
 
 #endif // KARTTUMBLE_H
