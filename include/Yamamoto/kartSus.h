@@ -25,7 +25,7 @@ public:
     void DoSusAction(int); // amogus
     void DoTireAction();
     // Inlines
-    KartBody *getKartBody();
+    KartBody *getKartBody() { return mBody; }
 
     // Unused
     void InitTestTirePose(int);

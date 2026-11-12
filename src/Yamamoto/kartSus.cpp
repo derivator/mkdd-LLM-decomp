@@ -7,7 +7,12 @@
 
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
-KartBody *KartSus::getKartBody() { return mBody; }
+static __declspec(weak) void ksUnused(KartSus *sus)
+{
+    sus->mScratchVec.set(0.0f, 0.0f, 0.0f);
+    KartBody *body = sus->getKartBody();
+    sus->mGndPoint.set(sus->mContactPos);
+}
 
 void KartSus::InitTirePose(int n)
 {
@@ -364,8 +369,7 @@ void KartSus::DoSusAction(int)
             f2 = mSpringMin;
         }
         f29 *= f2;
-        f32 f28 = (mDamp * spring) * (0.000025f * getKartBody()->_3a4);
-        f30v = (-f29 * f30v) * (0.00002f * getKartBody()->_3a4) - f28;
+        f30v = (-f29 * f30v) * (0.00002f * getKartBody()->_3a4) - (mDamp * spring) * (0.000025f * getKartBody()->_3a4);
         f30v *= mSusPowerMul * SusPowerData[getKartBody()->mIdx];
         if (f30v >= 95.0f * getKartBody()->_3a4) {
             f30v = 95.0f * getKartBody()->_3a4;
