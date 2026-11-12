@@ -9,6 +9,10 @@
 
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
+// The single-case CheckCrash() switches are deliberate. MWCC lowers them to
+// `cmp; beq case; b default`, while an equivalent if/else drops the
+// unconditional branch and no longer matches the target.
+
 // comments inside functions are inline functions being called in that function
 
 void KartTumble::Init(int index) {
