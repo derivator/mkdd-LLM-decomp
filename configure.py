@@ -1274,7 +1274,7 @@ config.libs = [
             Object(Matching, "Osako/LANSelectMode.cpp"),
             Object(NonMatching, "Osako/LANTitle.cpp"),
             Object(NonMatching, "Osako/LANEntry.cpp"),
-            Object(NonMatching, "Osako/LANPlayInfo.cpp"),
+            Object(Matching, "Osako/LANPlayInfo.cpp"),
             Object(Matching, "Osako/MenuBackground.cpp"),
             Object(Matching, "Osako/MenuTitleLine.cpp"),
             Object(Matching, "Osako/GIRecord.cpp"),
