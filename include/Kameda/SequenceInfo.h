@@ -36,11 +36,23 @@ public:
     SequenceInfo();
     void setGPRank(int, int);
 
+    int getStartNo(int kartNo) {
+#line 163
+        JUT_MINMAX_ASSERT(0, kartNo, 8);
+        return mStartNo[kartNo];
+    }
+
     void setStartNo(int kartNo, int startNo) {
 #line 167
         JUT_MINMAX_ASSERT(0, kartNo, 8);
         JUT_MINMAX_ASSERT(0, startNo, 8);
         mStartNo[kartNo] = startNo;
+    }
+
+    int getRankPoint(int kart) {
+#line 226
+        JUT_MINMAX_ASSERT(0, kart, 8);
+        return mRankPoint[kart];
     }
 
     void set_318_charId(int kart, int driverNo, ECharID charId) {
@@ -79,6 +91,18 @@ public:
 
     void set_318_Pad(int kart, KartGamePad *pad) {
         _318[kart]._18 = pad;
+    }
+
+    int getCupNo(int course) {
+#line 424
+        JUT_MINMAX_ASSERT(0, course, 16);
+        return _3cc[course] / 4;
+    }
+
+    int getRank(int rank) {
+#line 240
+        JUT_MINMAX_ASSERT(0, rank, 8);
+        return _2d8[rank];
     }
 
     void getDemoKart(int no, ECharID &charID1, ECharID &charID2, EKartID &kartID)
@@ -123,7 +147,7 @@ public:
         return mGameFlag != 0 || mSecretKart != 0;
     }
 
-private:
+public:
     JMARandFast mRnd;          // 00
     int mStartNo[8];           // 004
     KartGamePad *mDecidePad;   // 024
@@ -157,7 +181,6 @@ private:
 public:
     int _350;                  // 350 (number of [human] players?)
 
-private:
     int _354;                  //
     ERaceLevel mLevel;         //
     u8 _35c;                   //

@@ -1093,7 +1093,7 @@ config.libs = [
             Object(NonMatching, "Kameda/SceneTitle.cpp"),
             Object(NonMatching, "Kameda/SceneOption.cpp"),
             Object(NonMatching, "Kameda/SceneRecord.cpp"),
-            Object(NonMatching, "Kameda/SceneMap.cpp"),
+            Object(Matching, "Kameda/SceneMap.cpp"),
             Object(NonMatching, "Kameda/Result2D.cpp"),
             Object(NonMatching, "Kameda/SceneFactory.cpp"),
             Object(Matching, "Kameda/SequenceInfo.cpp"),

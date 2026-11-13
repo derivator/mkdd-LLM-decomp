@@ -17,5 +17,8 @@ public:
     void nextAward(); // 0x80145ca0
     void nextEnding(); // 0x80146148
     void nextTrueEnding(); // 0x801461c4
+
+    int mState;          // 0x0c
+    Scene::SceneType mNextScene; // 0x10
 }; // class SceneMap
 #endif // SCENEMAP_H
